@@ -18,7 +18,7 @@ BEGIN
         INTO v_saldo, v_limite 
         FROM clientes WHERE id = p_cliente_id;
 
-    IF v_saldo + diff <= -1 * v_limite THEN
+    IF v_saldo + diff < -1 * v_limite THEN
         RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
     END IF;
 

@@ -1,6 +1,6 @@
 CREATE TABLE clientes (
 	id SERIAL PRIMARY KEY,
-	nome VARCHAR(50) NOT NULL,
+	nome VARCHAR(255) NOT NULL,
 	limite INTEGER NOT NULL,
 	saldo INTEGER NOT NULL DEFAULT 0
 );
@@ -10,7 +10,7 @@ CREATE TABLE transacoes (
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
-	descricao VARCHAR(10) NOT NULL,
+	descricao VARCHAR(255) NOT NULL,
 	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
 	CONSTRAINT fk_clientes_transacoes_id
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)

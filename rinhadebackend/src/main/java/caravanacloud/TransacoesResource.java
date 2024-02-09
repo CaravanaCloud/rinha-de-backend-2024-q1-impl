@@ -29,9 +29,24 @@ public class TransacoesResource {
             @PathParam("id") Integer id,
             Map<String, Object> t) {
         Log.tracef("Transacao recebida: %s %s ", id, t);
-        var valor = (Integer) t.get("valor");
+
+        var valorNumber = (Number) t.get("valor");
+        if (valorNumber == null
+                || !Integer.class.equals(valorNumber.getClass())) {
+            throw new WebApplicationException("Valor invalido", 422);
+        }
+        Integer valor = valorNumber.intValue();
+
         var tipo = (String) t.get("tipo");
+        if (tipo == null
+                || !("c".equals(tipo) || "d".equals(tipo))) {
+            throw new WebApplicationException("Tipo invalido", 422);
+        }
+
         var descricao = (String) t.get("descricao");
+        if (descricao == null) {
+            descricao = "";
+        }
 
         var query = "select * from proc_transacao(?, ?, ?, ?)";
 
