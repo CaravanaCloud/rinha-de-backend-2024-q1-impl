@@ -5,9 +5,9 @@ tasks:
   - name: Build project
     init: |
       ./install-gatling.sh
-      mvn -f ./participantes/caravana-quarkus/rinhadebackend install
+      mvn -f ./rinhadebackend install
     command: |
-      mvn -f ./participantes/caravana-quarkus/rinhadebackend quarkus:dev
+      mvn -f ./rinhadebackend quarkus:dev
 
 vscode:
   extensions:
