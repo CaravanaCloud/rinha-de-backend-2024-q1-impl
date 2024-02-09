@@ -1,7 +1,6 @@
 package caravanacloud;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Map;
 
 import javax.sql.DataSource;
