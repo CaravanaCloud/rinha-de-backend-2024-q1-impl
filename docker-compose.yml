@@ -17,7 +17,7 @@ services:
       resources:
         limits:
           cpus: "0.45"
-          memory: "200MB"
+          memory: "150MB"
 
   api02:
     <<: *api
@@ -29,7 +29,7 @@ services:
       - QUARKUS_DATASOURCE_PASSWORD=123
     ports:
       - "9002:9990"
-  
+
   nginx:
     image: nginx:latest
     volumes:
@@ -43,7 +43,7 @@ services:
       resources:
         limits:
           cpus: "0.15"
-          memory: "10MB"
+          memory: "50MB"
 
   db:
     image: postgres:latest
@@ -56,14 +56,14 @@ services:
       - "5400:5400"
     expose:
       - "5400"
-#    volumes:
-#      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    #    volumes:
+    #      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -p 5400
     deploy:
       resources:
         limits:
           cpus: "0.45"
-          memory: "140MB"
+          memory: "200MB"
 
 networks:
   default:

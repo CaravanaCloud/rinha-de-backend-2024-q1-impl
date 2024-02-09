@@ -1,9 +1,12 @@
+CREATE TYPE transacao_result AS (saldo INT, limite INT);
+
 CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
-RETURNS VOID as $$
+RETURNS transacao_result as $$
 DECLARE
     diff INT;
     v_saldo INT;
     v_limite INT;
+    result transacao_result;
 BEGIN
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
@@ -15,18 +18,22 @@ BEGIN
         INTO v_saldo, v_limite 
         FROM clientes WHERE id = p_cliente_id;
 
-    IF v_saldo + diff < -1 * v_limite THEN
+    IF v_saldo + diff <= -1 * v_limite THEN
         RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
     END IF;
 
 	UPDATE clientes 
         SET saldo = saldo + diff 
-        WHERE id = p_cliente_id;
+        WHERE id = p_cliente_id
+        RETURNING saldo, limite INTO v_saldo, v_limite;
+    
+    result := (v_saldo, v_limite)::transacao_result;
+
 
 	INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
 	    VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
 	
-	RETURN;
+	RETURN result;
 EXCEPTION
     WHEN OTHERS THEN
         RAISE 'Error processing transaction: %', SQLERRM;
