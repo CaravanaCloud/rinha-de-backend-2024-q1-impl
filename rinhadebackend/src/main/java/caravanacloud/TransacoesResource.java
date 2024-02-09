@@ -45,6 +45,7 @@ public class TransacoesResource {
 
         var descricao = (String) t.get("descricao");
         if (descricao == null
+                || descricao.isEmpty()
                 || descricao.length() > 10) {
             throw new WebApplicationException("Descricao invalida", 422);
         }
