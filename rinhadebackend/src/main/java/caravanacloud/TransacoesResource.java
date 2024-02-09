@@ -44,8 +44,9 @@ public class TransacoesResource {
         }
 
         var descricao = (String) t.get("descricao");
-        if (descricao == null) {
-            descricao = "";
+        if (descricao == null
+                || descricao.length() > 10) {
+            throw new WebApplicationException("Descricao invalida", 422);
         }
 
         var query = "select * from proc_transacao(?, ?, ?, ?)";
