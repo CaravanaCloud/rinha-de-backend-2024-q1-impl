@@ -61,6 +61,12 @@ public class TransacoesResource {
                 if (rs.next()) {
                     Integer saldo = rs.getInt("saldo");
                     Integer limite = rs.getInt("limite");
+
+                    if (saldo < -1 * limite) {
+                        Log.error("*** LIMITE ULTRAPASSADO " + saldo + " / " + limite);
+                        Log.error(t);
+                    }
+
                     var body = Map.of("limite", limite,
                             "saldo", saldo);
                     stmt.close();

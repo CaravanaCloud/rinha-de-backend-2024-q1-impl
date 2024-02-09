@@ -14,26 +14,30 @@ BEGIN
         diff := p_valor;
     END IF;
 
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+
 	SELECT saldo, limite 
         INTO v_saldo, v_limite 
         FROM clientes WHERE id = p_cliente_id;
 
-    IF v_saldo + diff < -1 * v_limite THEN
+    IF (v_saldo + diff) < (-1 * v_limite) THEN
         RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+    ELSE
+        UPDATE clientes 
+            SET saldo = saldo + diff 
+            WHERE id = p_cliente_id
+            RETURNING saldo, limite INTO v_saldo, v_limite;
+        
+        result := (v_saldo, v_limite)::transacao_result;
+
+
+        INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+        
+        RETURN result;
+
     END IF;
 
-	UPDATE clientes 
-        SET saldo = saldo + diff 
-        WHERE id = p_cliente_id
-        RETURNING saldo, limite INTO v_saldo, v_limite;
-    
-    result := (v_saldo, v_limite)::transacao_result;
-
-
-	INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
-	    VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
-	
-	RETURN result;
 EXCEPTION
     WHEN OTHERS THEN
         RAISE 'Error processing transaction: %', SQLERRM;
