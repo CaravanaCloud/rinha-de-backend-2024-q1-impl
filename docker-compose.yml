@@ -1,7 +1,7 @@
 version: "3.5"
 
 services:
-  api01: &api
+  api01:
     image: caravanacloud/rinhadebackend:latest
     hostname: api01
     environment:
@@ -16,11 +16,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
-          memory: "150MB"
+          cpus: "0.1"
+          memory: "10MB"
 
   api02:
-    <<: *api
+    image: caravanacloud/rinhadebackend:latest
     hostname: api02
     environment:
       - DB_HOSTNAME=db
@@ -29,6 +29,13 @@ services:
       - QUARKUS_DATASOURCE_PASSWORD=123
     ports:
       - "9002:9990"
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          cpus: "0.39"
+          memory: "240MB"
 
   nginx:
     image: nginx:latest
@@ -42,7 +49,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.15"
+          cpus: "0.20"
           memory: "50MB"
 
   db:
@@ -62,8 +69,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
-          memory: "200MB"
+          cpus: "0.40"
+          memory: "250MB"
 
 networks:
   default:

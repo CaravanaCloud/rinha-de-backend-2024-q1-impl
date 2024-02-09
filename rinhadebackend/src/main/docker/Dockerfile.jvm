@@ -1,6 +1,6 @@
 ####
 # docker build -f src/main/docker/Dockerfile.jvm --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest .
-# docker run -i --rm -p 9999:9999 --network=host --env-file ./.env.local caravanacloud/rinhadebackend:latest
+# docker run -i --rm -p 9999:9990 --network=host --env-file ./.env.local caravanacloud/rinhadebackend:latest
 # docker login --username=caravanacloud 
 # docker push caravanacloud/rinhadebackend:latest
 ###
