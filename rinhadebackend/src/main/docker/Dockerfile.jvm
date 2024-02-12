@@ -38,4 +38,6 @@ COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
 RUN ls -liah "$CP_TO/quarkus-run.jar"
 
 EXPOSE 9990
-ENTRYPOINT java -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar
+# -XX:InitialRAMPercentage=50.0
+ARG JAVA_XARGS="-XX:+UseSerialGC"
+ENTRYPOINT java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar
