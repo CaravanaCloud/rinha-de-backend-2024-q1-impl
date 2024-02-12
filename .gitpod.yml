@@ -9,6 +9,20 @@ tasks:
     command: |
       mvn -f ./rinhadebackend quarkus:dev
 
+ports:
+  - port: 9000
+    visibility: private
+    onOpen: ignore
+  - port: 9001
+    visibility: private
+    onOpen: ignore
+  - port: 9002
+    visibility: private
+    onOpen: ignore
+  - port: 9999
+    visibility: public
+    onOpen: ignore
+
 vscode:
   extensions:
     - ritwickdey.liveserver
