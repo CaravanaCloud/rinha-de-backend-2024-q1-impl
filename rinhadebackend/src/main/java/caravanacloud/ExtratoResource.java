@@ -39,7 +39,7 @@ public class ExtratoResource {
         var query = "select * from proc_extrato(?)";
 
         try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(query);) { // TODO cache statement?
+                var stmt = conn.prepareStatement(query);) {
             stmt.setInt(1, id);
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
@@ -52,6 +52,10 @@ public class ExtratoResource {
                 }
             }
         } catch (SQLException e) {
+            var msg = e.getMessage();
+            if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
+                throw new WebApplicationException("Cliente nao encontrado", 404);
+            }
             e.printStackTrace();
             throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
         } catch (Exception e) {
