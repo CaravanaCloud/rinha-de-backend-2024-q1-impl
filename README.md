@@ -1,8 +1,9 @@
 # Implementacao da Rinha de Backend
 
-Feito com <3 e:
+Feito com amor e:
 * Quarkus
 * Postgres
 * NGINX
 
-Fonte em https://github.com/CaravanaCloud/rinha-de-backend-2024-q1-impl
+Fontes em https://github.com/CaravanaCloud/rinha-de-backend-2024-q1-impl
+Colaboracoes mais que bem vindas!
