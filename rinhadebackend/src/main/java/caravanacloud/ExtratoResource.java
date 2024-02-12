@@ -19,6 +19,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("/clientes/{id}/extrato")
 public class ExtratoResource {
@@ -30,72 +31,33 @@ public class ExtratoResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Map<String, Object> getExtrato(
+    public Response getExtrato(
             @PathParam("id") Integer id) {
-        var saldo = getSaldo(id);
-        var txs = getTransacoes(id);
-        var result = Map.of(
-                "saldo", saldo,
-                "ultimas_transacoes", txs);
-        return result;
-    }
+        Log.tracef("Extrato solicitado: %s ", id);
 
-    static final String SQL_CLIENTE = """
-                SELECT * FROM clientes WHERE id = ?
-            """;
+        
+        var query = "select * from proc_extrato(?)";
 
-    static final String SQL_TRANSACOES = """
-                SELECT * FROM transacoes
-                WHERE cliente_id = ?
-                ORDER BY realizada_em DESC
-                LIMIT 10
-            """;
-
-    private List<Map> getTransacoes(Integer id) {
         try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(SQL_TRANSACOES)) {
+                var stmt = conn.prepareStatement(query);) { // TODO cache statement?
             stmt.setInt(1, id);
-            var rs = stmt.executeQuery();
-            var result = new ArrayList<Map>(); // TODO: set initial capacity?
-            while (rs.next()) {
-                var t = Map.of(
-                        "valor", rs.getInt("valor"),
-                        "tipo", rs.getString("tipo"),
-                        "descricao", rs.getString("descricao"),
-                        "realizada_em", rs.getTimestamp("realizada_em"));
-                result.add(t);
-            }
-            return result;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            Log.debugf("Erro ao acessar o extrato", e);
-            throw new WebApplicationException("Erro ao acessar o banco de dados", 500);
-        }
-    }
-
-    static final DateTimeFormatter fmt = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            .withZone(ZoneId.of("UTC"));
-
-    private Map getSaldo(Integer id) {
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(SQL_CLIENTE)) {
-            stmt.setInt(1, id);
-            var rs = stmt.executeQuery();
-            if (rs.next()) {
-                var result = Map.of(
-                        "total", rs.getInt("saldo"),
-                        "data_extrato", fmt.format(LocalDateTime.now()), // TODO? rs.getTimestamp("ultima_atualizacao"),
-                        "limite", rs.getInt("limite"));
-                return result;
-            } else {
-                Log.debug("Cliente nao encontrado");
-                throw new WebApplicationException("Cliente nao encontrado", 404);
+            stmt.execute();
+            try (var rs = stmt.getResultSet()) {
+                if (rs.next()) {
+                    var result = rs.getString(1);
+                    stmt.close();
+                    return Response.ok(result).build();
+                } else {
+                    throw new WebApplicationException("Extrato nao encontrado", 404);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            Log.debugf("Erro ao acessar o saldo", e);
-            throw new WebApplicationException("Erro ao acessar o banco de dados", 500);
+            throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.debug("Erro ao processar a transacao", e);
+            throw new WebApplicationException("Erro ao processar a transacao", 500);
         }
     }
 }
