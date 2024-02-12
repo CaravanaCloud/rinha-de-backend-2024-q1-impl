@@ -16,8 +16,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.1"
-          memory: "10MB"
+          cpus: "1.4"
+          memory: "1500MB"
 
   api02:
     image: caravanacloud/rinhadebackend:latest
@@ -34,8 +34,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.39"
-          memory: "240MB"
+          cpus: "1.4"
+          memory: "1500MB"
 
   nginx:
     image: nginx:latest
@@ -49,8 +49,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.20"
-          memory: "50MB"
+          cpus: "1.20"
+          memory: "1000MB"
 
   db:
     image: postgres:latest
@@ -69,8 +69,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "250MB"
+          cpus: "1.5"
+          memory: "1500MB"
 
 networks:
   default:

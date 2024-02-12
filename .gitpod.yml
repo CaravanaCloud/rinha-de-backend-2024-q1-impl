@@ -11,6 +11,7 @@ tasks:
 
 vscode:
   extensions:
+    - ritwickdey.liveserver
     - vscjava.vscode-java-pack
     - vscjava.vscode-java-debug
     - vscjava.vscode-java-dependency
@@ -20,3 +21,6 @@ vscode:
     - redhat.fabric8-analytics
     - ms-azuretools.vscode-docker
     - gatling.gatling
+
+additionalRepositories:
+  - url: https://github.com/zanfranceschi/rinha-de-backend-2024-q1
