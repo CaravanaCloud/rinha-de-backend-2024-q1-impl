@@ -11,8 +11,7 @@ FROM fedora:39 as build
 # Root level
 USER root
 ENV PATH="/usr/bin:${PATH}"
-# glibc-devel zlib-devel libstdc++-static
-RUN bash -c "dnf install -y zip unzip gcc" 
+RUN bash -c "dnf install -y zip unzip"
 
 
 # Docker
@@ -47,14 +46,15 @@ WORKDIR "/home/$USERNAME/quarkus-app"
 COPY --chown=$USERNAME . .
 
 ## Build
-ARG MVN_XOPTS="-Dnative -fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-RUN bash -c "echo [$HOME] [/home/$USERNAME] "
-RUN bash -c "find /home/"
+ARG MVN_XOPTS="-fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && mvn $MVN_XOPTS install"
 
 ### RUNTIME STAGE ###
 FROM fedora:39
+
+USER root
+RUN bash -c "dnf install -y zip unzip java-21-openjdk"
 
 # Create user
 ARG USERNAME=container-user
@@ -68,11 +68,15 @@ USER $USERNAME
 RUN mkdir -p "/home/$USERNAME/quarkus-app"
 WORKDIR "/home/$USERNAME/quarkus-app"
 
-ARG CP_FROM="/home/container-user/quarkus-app/target/*-runner"
-ARG CP_TO="/home/container-user/quarkus-app/"
+ARG CP_FROM="/home/container-user/quarkus-app/target/quarkus-app"
+ARG CP_TO=$CP_FROM
 RUN mkdir -p "$CP_TO"
+
 COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
 
-# Container Settings
+RUN ls -liah "$CP_TO/quarkus-run.jar"
+
 EXPOSE 9990
-ENTRYPOINT /home/container-user/quarkus-app/rinhadebackend-0.0.1-runner
+
+ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=80.0"
+ENTRYPOINT java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar
