@@ -1,33 +1,69 @@
 ####
-# docker build -f src/main/docker/Dockerfile.jvm --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest .
+# docker build -f rinhadebackend/src/main/docker/Dockerfile --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest rinhadebackend
 # docker run -i --rm -p 9999:9990 --network=host --env-file ./.env.local caravanacloud/rinhadebackend:latest
-# docker login --username=caravanacloud 
+# docker login --username=caravanacloud
 # docker push caravanacloud/rinhadebackend:latest
 ###
 
 ### BUILD STAGE ###
-FROM caravanacloud/ubi-java:J21F39 as build
+FROM fedora:39 as build
 
+# Root level
+USER root
+ENV PATH="/usr/bin:${PATH}"
+RUN bash -c "dnf install -y zip unzipc"
+
+
+# Docker
+# RUN bash -c "dnf -y install dnf-plugins-core"
+# RUN bash -c "dnf -y config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo"
+# RUN bash -c "dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+# sudo systemctl start docker
+
+## Create User
 ARG USERNAME=container-user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME 
+RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 
 # User level
 USER $USERNAME
 
+## Setup JDK
+ARG JAVA_SDK="21.0.2-graalce"
+RUN curl -s "https://get.sdkman.io" | bash 
+RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
+    && sdk install java $JAVA_SDK \
+    && sdk default java $JAVA_SDK \
+    && sdk install quarkus \
+    && sdk install maven \
+    "
+
+## Copy source code
 RUN mkdir -p "/home/$USERNAME/quarkus-app"
 WORKDIR "/home/$USERNAME/quarkus-app"
 COPY --chown=$USERNAME . .
 
-ENV PATH="${PATH}:/home/$USERNAME/.sdkman/candidates/maven/current/bin/"
+## Build
 ARG MVN_XOPTS="-fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-RUN mvn $MVN_XOPTS install
-
+RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
+    && mvn $MVN_XOPTS install"
 
 ### RUNTIME STAGE ###
-FROM caravanacloud/ubi-java:J21F39
+FROM fedora:39
 
 # Create user
 ARG USERNAME=container-user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME 
+RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 USER $USERNAME
+
+# Copy binary
+RUN mkdir -p "/home/$USERNAME/quarkus-app"
+WORKDIR "/home/$USERNAME/quarkus-app"
 
 ARG CP_FROM="/home/container-user/quarkus-app/target/quarkus-app"
 ARG CP_TO=$CP_FROM

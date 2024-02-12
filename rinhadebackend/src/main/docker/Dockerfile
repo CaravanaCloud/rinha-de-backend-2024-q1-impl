@@ -1,7 +1,7 @@
 ####
 # docker build -f rinhadebackend/src/main/docker/Dockerfile --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest rinhadebackend
 # docker run -i --rm -p 9999:9990 --network=host --env-file ./.env.local caravanacloud/rinhadebackend:latest
-# docker login --username=caravanacloud 
+# docker login --username=caravanacloud
 # docker push caravanacloud/rinhadebackend:latest
 ###
 
@@ -11,7 +11,8 @@ FROM fedora:39 as build
 # Root level
 USER root
 ENV PATH="/usr/bin:${PATH}"
-RUN bash -c "dnf -y install zip unzip gcc glibc-devel zlib-devel libstdc++-static"
+# glibc-devel zlib-devel libstdc++-static
+RUN bash -c "dnf install -y zip unzip gcc" 
 
 
 # Docker
