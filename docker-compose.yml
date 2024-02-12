@@ -35,7 +35,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "1000MB"
+          memory: "100MB"
 
   api02:
     networks:
@@ -73,7 +73,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "1000MB"
+          memory: "100MB"
 
 
   nginx:
@@ -99,7 +99,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "2000MB"
+          memory: "20MB"
     
   db:
     networks:
@@ -122,7 +122,7 @@ services:
       resources: 
         limits:
           cpus: "0.50"
-          memory: "3300MB"
+          memory: "330MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
