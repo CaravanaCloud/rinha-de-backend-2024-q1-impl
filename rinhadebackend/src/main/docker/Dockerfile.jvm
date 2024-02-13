@@ -11,7 +11,7 @@ FROM fedora:39 as build
 # Root level
 USER root
 ENV PATH="/usr/bin:${PATH}"
-RUN bash -c "dnf install -y zip unzipc"
+RUN bash -c "dnf install -y zip unzip"
 
 
 # Docker
@@ -53,6 +53,9 @@ RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
 ### RUNTIME STAGE ###
 FROM fedora:39
 
+USER root
+RUN bash -c "dnf install -y zip unzip java-21-openjdk"
+
 # Create user
 ARG USERNAME=container-user
 ARG USER_UID=1000
@@ -74,6 +77,6 @@ COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
 RUN ls -liah "$CP_TO/quarkus-run.jar"
 
 EXPOSE 9990
-# -XX:InitialRAMPercentage=50.0
-ARG JAVA_XARGS="-XX:+UseSerialGC"
+
+ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=80.0"
 ENTRYPOINT java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar
