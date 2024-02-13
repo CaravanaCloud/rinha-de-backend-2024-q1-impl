@@ -28,7 +28,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api01:9990/_hc"]
-      interval: 1s
+      interval: 2s
       retries: 10
     ulimits:
       nofile:
@@ -69,7 +69,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api02:9990/_hc"]
-      interval: 1s
+      interval: 2s
       retries: 10
     ulimits:
       nofile:
@@ -103,7 +103,7 @@ services:
         hard: 1000000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://lb:9999/_hc"]
-      interval: 1s
+      interval: 2s
       retries: 15
     deploy:
       resources:
