@@ -1,0 +1,1 @@
+watch -n 1 "PGPASSWORD=123 psql -h localhost -U rinha -d rinha -p 5400 -c 'SELECT COUNT(*) FROM pg_stat_activity;'"
