@@ -38,7 +38,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "800MB"
+          memory: "80MB"
 
   api02:
     networks:
@@ -79,7 +79,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "800MB"
+          memory: "80MB"
 
 
   nginx:
