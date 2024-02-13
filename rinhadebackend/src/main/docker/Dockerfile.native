@@ -51,6 +51,7 @@ RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && mvn $MVN_XOPTS install"
 
 ### RUNTIME STAGE ###
+# TODO FROM scratch
 FROM fedora:39
 
 # Create user
