@@ -131,6 +131,8 @@
       <properties>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
+        <!-- -H:+UnlockExperimentalVMOptions, -->
+        <quarkus.native.additional-build-args>-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=90,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
       </properties>
     </profile>
   </profiles>

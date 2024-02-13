@@ -1,10 +1,11 @@
+# docker-compose -f docker-compose.native.yml up
 version: "3.9"
 
 services:
   api01:
     networks:
       - rinha-network
-    image: caravanacloud/rinhadebackend:latest
+    image: caravanacloud/rinhadebackend-native:latest
     hostname: api01
     container_name: api01
     environment:
@@ -40,7 +41,7 @@ services:
   api02:
     networks:
       - rinha-network
-    image: caravanacloud/rinhadebackend:latest
+    image: caravanacloud/rinhadebackend-native:latest
     hostname: api02
     container_name: api02
     environment:
