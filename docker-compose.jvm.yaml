@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "80MB"
+          memory: "100MB"
 
   api02:
     networks:
@@ -71,7 +71,7 @@ services:
       - QUARKUS_DATASOURCE_PASSWORD=123
       - QUARKUS_LOG__LEVEL=DEBUG
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
-      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
+#      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
@@ -97,7 +97,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "80MB"
+          memory: "100MB"
 
 
   nginx:
@@ -148,7 +148,7 @@ services:
       resources: 
         limits:
           cpus: "0.50"
-          memory: "350MB"
+          memory: "310MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
