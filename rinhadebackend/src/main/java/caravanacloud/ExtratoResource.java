@@ -1,12 +1,6 @@
 package caravanacloud;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -48,18 +42,18 @@ public class ExtratoResource {
                     stmt.close();
                     return Response.ok(result).build();
                 } else {
-                    throw new WebApplicationException("Extrato nao encontrado", 404);
+                    return Response.status(404).entity("Extrato nao encontrado").build();
                 }
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                throw new WebApplicationException("Cliente nao encontrado", 404);
+                return Response.status(404).entity("Cliente nao encontrado").build();
             }
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             Log.debug("Erro ao processar a transacao", e);
             throw new WebApplicationException("Erro ao processar a transacao", 500);
         }

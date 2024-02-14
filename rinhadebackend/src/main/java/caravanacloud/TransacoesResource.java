@@ -32,21 +32,21 @@ public class TransacoesResource {
         var valorNumber = (Number) t.get("valor");
         if (valorNumber == null
                 || !Integer.class.equals(valorNumber.getClass())) {
-            throw new WebApplicationException("Valor invalido", 422);
+            return Response.status(422).entity("Valor invalido").build();
         }
         Integer valor = valorNumber.intValue();
 
         var tipo = (String) t.get("tipo");
         if (tipo == null
                 || !("c".equals(tipo) || "d".equals(tipo))) {
-            throw new WebApplicationException("Tipo invalido", 422);
+            return Response.status(422).entity("Tipo invalido").build();
         }
 
         var descricao = (String) t.get("descricao");
         if (descricao == null
                 || descricao.isEmpty()
                 || descricao.length() > 10) {
-            throw new WebApplicationException("Descricao invalida", 422);
+            return Response.status(422).entity("Descricao invalida").build();
         }
 
         var query = "select * from proc_transacao(?, ?, ?, ?)";
@@ -73,21 +73,21 @@ public class TransacoesResource {
                     stmt.close();
                     return Response.ok(body).build();
                 } else {
-                    throw new WebApplicationException("Erro ao processar a transacao", 500);
+                    return Response.status(500).entity("Erro ao processar a transacao").build();
                 }
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("LIMITE_INDISPONIVEL")) {
-                throw new WebApplicationException("Limite indisponivel", 422);
+                return Response.status(422).entity("Limite indisponivel").build();
             }
             if (msg.contains("fk_clientes_transacoes_id")) {
-                throw new WebApplicationException("Cliente inexistente", 404);
+                return Response.status(404).entity("Cliente inexistente").build();
             }
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             Log.debug("Erro ao processar a transacao", e);
             throw new WebApplicationException("Erro ao processar a transacao", 500);
         }

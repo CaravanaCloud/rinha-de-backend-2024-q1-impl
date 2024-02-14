@@ -22,6 +22,9 @@ ports:
   - port: 9002
     visibility: private
     onOpen: ignore
+  - port: 9090
+    visibility: public
+    onOpen: ignore
   - port: 9999
     visibility: public
     onOpen: ignore
