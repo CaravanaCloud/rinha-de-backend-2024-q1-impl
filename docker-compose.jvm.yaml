@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api01:
     networks:
-      - rinha-network
+      - rinha-net
     image: caravanacloud/rinhadebackend:latest
     hostname: api01
     container_name: api01
@@ -28,6 +28,8 @@ services:
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.flyway__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.smallreye__LEVEL=INFO
     ports:
       - "9001:9990"
     depends_on:
@@ -35,8 +37,8 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api01:9990/_hc"]
-      interval: 2s
-      retries: 10
+      interval: 3s
+      retries: 15
     ulimits:
       nofile:
         soft: 1000000
@@ -49,7 +51,7 @@ services:
 
   api02:
     networks:
-      - rinha-network
+      - rinha-net
     image: caravanacloud/rinhadebackend:latest
     hostname: api02
     container_name: api02
@@ -74,6 +76,8 @@ services:
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.flyway__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.smallreye__LEVEL=INFO
     ports:
       - "9002:9990"
     depends_on:
@@ -83,8 +87,8 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api02:9990/_hc"]
-      interval: 2s
-      retries: 10
+      interval: 3s
+      retries: 15
     ulimits:
       nofile:
         soft: 1000000
@@ -100,7 +104,7 @@ services:
     hostname: lb
     container_name: lb
     networks:
-      - rinha-network 
+      - rinha-net 
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -117,7 +121,7 @@ services:
         hard: 1000000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://lb:9999/_hc"]
-      interval: 2s
+      interval: 3s
       retries: 15
     deploy:
       resources:
@@ -127,7 +131,7 @@ services:
     
   db:
     networks:
-      - rinha-network
+      - rinha-net
     image: postgres:latest
     hostname: db
     container_name: db
@@ -153,7 +157,11 @@ services:
       start_period: 5s
 
   prometheus:
+    networks:
+      - rinha-net  
     image: prom/prometheus:latest
+    hostname: prom
+    container_name: prom
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command:
@@ -162,7 +170,7 @@ services:
       - "9090:9090"
 
 networks:
-  rinha-network:
+  rinha-net:
     driver: bridge
     driver_opts:
       com.docker.network.driver.mtu: 1420
