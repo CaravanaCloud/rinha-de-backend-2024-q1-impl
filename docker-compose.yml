@@ -46,9 +46,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-#          memory: "100MB"
-
+          cpus: "0.30"
+          memory: "100MB"
   api02:
     networks:
       - rinha-net
@@ -96,8 +95,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-#          memory: "100MB"
+          cpus: "0.30"
+          memory: "100MB"
 
 
   nginx:
@@ -127,7 +126,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-#          memory: "40MB"
+          memory: "40MB"
     
   db:
     networks:
@@ -147,8 +146,8 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.50"
-#          memory: "310MB"
+          cpus: "0.70"
+          memory: "310MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
