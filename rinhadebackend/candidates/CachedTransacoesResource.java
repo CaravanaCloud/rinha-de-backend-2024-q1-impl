@@ -2,7 +2,7 @@ package caravanacloud;
 
 import java.util.Map;
 
-import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.Cache;
 
 import io.quarkus.infinispan.client.Remote;
 import io.quarkus.logging.Log;
@@ -15,12 +15,12 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/clientes/{id}/transacoes")
+@Path("/cached/clientes/{id}/transacoes")
 public class CachedTransacoesResource {
     @Inject
-    @Remote("clientesCache") 
-    RemoteCache<Integer, Cliente> clientes;
+    Cache<Integer, Cliente> clientes;
     
+    // curl -v -X POST -H "Content-Type: application/json" -d "{"valor": 1, 'tipo': 'c', 'descricao': 'rinah rox'}" http://localhost:9999/simple/clientes/1/transacoes
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
@@ -37,5 +37,6 @@ public class CachedTransacoesResource {
             "saldo", cliente.saldo
         );
         return Response.ok(result).build();
+    }
 
 }

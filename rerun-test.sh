@@ -17,4 +17,7 @@ pushd rinha-de-backend-2024-q1
 ./executar-teste-local.sh
 popd
 
+echo "## Stopping containers"
+docker compose down
+
 echo "# done"

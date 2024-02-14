@@ -3,15 +3,15 @@ version: "3.9"
 services:
   api01:
     networks:
-      - rinha-network
+      - rinha-net
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api01
     container_name: api01
     environment:
       - DB_HOSTNAME=db
       - QUARKUS_BANNER_ENABLED=false
-      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
-      - QUARKUS_HTTP_IDLE_TIMEOUT=5
+#      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
+      - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://db:5400/rinha
       - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=100
       - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=50
@@ -21,6 +21,15 @@ services:
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
+      - QUARKUS_LOG_LEVEL=DEBUG
+      - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=DEBUG
+      - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.flyway__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.smallreye__LEVEL=INFO
     ports:
       - "9001:9990"
     depends_on:
@@ -28,8 +37,8 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api01:9990/_hc"]
-      interval: 2s
-      retries: 10
+      interval: 3s
+      retries: 15
     ulimits:
       nofile:
         soft: 1000000
@@ -38,19 +47,19 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "100MB"
+#          memory: "100MB"
 
   api02:
     networks:
-      - rinha-network
+      - rinha-net
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api02
     container_name: api02
     environment:
       - DB_HOSTNAME=db
       - QUARKUS_BANNER_ENABLED=false
-      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
-      - QUARKUS_HTTP_IDLE_TIMEOUT=5
+#      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
+      - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://db:5400/rinha
       - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=100
       - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=50
@@ -60,6 +69,15 @@ services:
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
+      - QUARKUS_LOG__LEVEL=DEBUG
+      - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
+#      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.flyway__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__io.smallreye__LEVEL=INFO
     ports:
       - "9002:9990"
     depends_on:
@@ -69,8 +87,8 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api02:9990/_hc"]
-      interval: 2s
-      retries: 10
+      interval: 3s
+      retries: 15
     ulimits:
       nofile:
         soft: 1000000
@@ -79,14 +97,14 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "100MB"
+#          memory: "100MB"
 
 
   nginx:
     hostname: lb
     container_name: lb
     networks:
-      - rinha-network 
+      - rinha-net 
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -103,17 +121,17 @@ services:
         hard: 1000000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://lb:9999/_hc"]
-      interval: 2s
+      interval: 3s
       retries: 15
     deploy:
       resources:
         limits:
           cpus: "0.20"
-          memory: "40MB"
+#          memory: "40MB"
     
   db:
     networks:
-      - rinha-network
+      - rinha-net
     image: postgres:latest
     hostname: db
     container_name: db
@@ -130,7 +148,7 @@ services:
       resources: 
         limits:
           cpus: "0.50"
-          memory: "310MB"
+#          memory: "310MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
@@ -138,8 +156,9 @@ services:
       retries: 15
       start_period: 5s
 
+
 networks:
-  rinha-network:
+  rinha-net:
     driver: bridge
     driver_opts:
       com.docker.network.driver.mtu: 1420

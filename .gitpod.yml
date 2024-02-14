@@ -10,6 +10,12 @@ tasks:
       mvn -f ./rinhadebackend quarkus:dev
 
 ports:
+  - port: 5005
+    visibility: private
+    onOpen: ignore
+  - port: 5333
+    visibility: private
+    onOpen: ignore    
   - port: 5400
     visibility: private
     onOpen: ignore

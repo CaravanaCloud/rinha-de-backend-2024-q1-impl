@@ -79,10 +79,10 @@ public class TransacoesResource {
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("LIMITE_INDISPONIVEL")) {
-                return Response.status(422).entity("Limite indisponivel").build();
+                return Response.status(422).entity("Erro: Limite indisponivel").build();
             }
             if (msg.contains("fk_clientes_transacoes_id")) {
-                return Response.status(404).entity("Cliente inexistente").build();
+                return Response.status(404).entity("Erro: Cliente inexistente").build();
             }
             //e.printStackTrace();
             throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
