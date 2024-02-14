@@ -13,3 +13,5 @@ docker push caravanacloud/rinhadebackend-jvm:latest
 echo "## Building Native image"
 docker build -f "$DIR/src/main/docker/Dockerfile.native" --no-cache --progress=plain -t caravanacloud/rinhadebackend-native:latest "$DIR"
 docker push caravanacloud/rinhadebackend-native:latest
+
+echo "## done"
