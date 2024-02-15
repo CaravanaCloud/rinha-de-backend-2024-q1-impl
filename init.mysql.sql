@@ -1,3 +1,4 @@
+
 -- Create tables
 CREATE TABLE clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,7 +13,7 @@ CREATE TABLE transacoes (
     valor INT NOT NULL,
     tipo CHAR(1) NOT NULL,
     descricao VARCHAR(255) NOT NULL,
-    realizada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    realizada_em DATETIME NOT NULL DEFAULT now(),
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
@@ -24,14 +25,23 @@ INSERT INTO clientes (nome, limite) VALUES
     ('padaria joia de cocaia', 100000 * 100),
     ('kid mais', 5000 * 100);
 
--- procs
-DELIMITER //
 
+-- Procedure for transactions
 CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255), OUT r_saldo INT, OUT r_limite INT)
 BEGIN
+    DECLARE count INT;
     DECLARE diff INT;
     DECLARE n_saldo INT;
     
+    SELECT COUNT(*) into count 
+        FROM clientes
+        WHERE id = p_cliente_id;
+
+    IF count = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
+        ROLLBACK;
+    END IF;
+
     -- Determine transaction effect
     IF p_tipo = 'd' THEN
         SET diff = p_valor * -1;
@@ -49,53 +59,50 @@ BEGIN
     -- Check if the new balance would exceed the limit
     IF (n_saldo) < (-1 * r_limite) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LIMITE_INDISPONIVEL';
+        ROLLBACK;
     ELSE
         -- Update clientes saldo
         UPDATE clientes SET saldo = n_saldo WHERE id = p_cliente_id;
         
         -- Insert into transacoes
-        INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+        INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(6));
 
         SELECT n_saldo, r_limite AS resultado;
     END IF;
-END //
-
-DELIMITER //
+END;
 
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
-    -- Variables to hold the JSON components
-    DECLARE saldo_json JSON;
-    DECLARE transacoes_json JSON;
-    
-    -- Get saldo and limite for the cliente
-    SELECT JSON_OBJECT(
-        'total', saldo,
-        'limite', limite
-    ) INTO saldo_json
-    FROM clientes
-    WHERE id = p_id;
-    
-    -- Get the last 10 transacoes for the cliente
-    SELECT COALESCE(JSON_ARRAYAGG(
-        JSON_OBJECT(
-            'valor', valor,
-            'tipo', tipo,
-            'descricao', descricao,
-            'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%T.%fZ')
-        )
-    ), JSON_ARRAY()) INTO transacoes_json
-    FROM transacoes
-    WHERE cliente_id = p_id
-    ORDER BY realizada_em DESC
-    LIMIT 10;
-    
-    -- Build the final JSON result
-    SELECT JSON_OBJECT(
-        'saldo', saldo_json,
-        'ultimas_transacoes', transacoes_json
-    ) AS extrato;
-END //
+    -- Check if the cliente exists
+    IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
+        ROLLBACK;
+    END IF;
 
-DELIMITER ;
+    -- Construct and return the entire JSON in a single query
+    SELECT JSON_OBJECT(
+        'saldo', (
+            SELECT JSON_OBJECT(
+                'total', saldo,
+                'limite', limite
+            )
+            FROM clientes
+            WHERE id = p_id
+        ),
+        'ultimas_transacoes', (
+            SELECT COALESCE(JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'valor', valor,
+                    'tipo', tipo,
+                    'descricao', descricao,
+                    'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%H:%i:%sZ')
+                )
+            ), JSON_ARRAY()) 
+            FROM transacoes
+            WHERE cliente_id = p_id
+            ORDER BY realizada_em DESC
+            LIMIT 10
+        )
+    ) AS extrato;
+END;
