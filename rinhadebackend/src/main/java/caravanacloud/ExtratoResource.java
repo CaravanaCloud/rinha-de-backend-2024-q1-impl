@@ -11,9 +11,9 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 @Path("/clientes/{id}/extrato")
 public class ExtratoResource {
@@ -24,7 +24,7 @@ public class ExtratoResource {
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
+    @Transactional // TODO Verificar: Transactional para select??? é necessário???
     public Response getExtrato(
             @PathParam("id") Integer id) {
         Log.tracef("Extrato solicitado: %s ", id);
@@ -39,23 +39,29 @@ public class ExtratoResource {
             try (var rs = stmt.getResultSet()) {
                 if (rs.next()) {
                     var result = rs.getString(1);
-                    stmt.close();
+                    // TODO Verificar: o try-with-resources não fecha o PreparedStatement ????
+                    // public interface PreparedStatement extends Statement {
+                    // public interface Statement extends Wrapper, AutoCloseable {
+                    stmt.close(); 
                     return Response.ok(result).build();
                 } else {
-                    return Response.status(404).entity("Extrato nao encontrado").build();
+                    return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
                 }
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                return Response.status(404).entity("Cliente nao encontrado").build();
+                return Response.status(Status.NOT_FOUND).entity("Cliente nao encontrado").build();
             }
             //e.printStackTrace();
-            throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            // throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            Log.debug("Erro ao processar a transacao", e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         } catch (Exception e) {
             //e.printStackTrace();
-            Log.debug("Erro ao processar a transacao", e);
-            throw new WebApplicationException("Erro ao processar a transacao", 500);
+            Log.error("Erro ao processar a transacao", e);
+            //throw new WebApplicationException("Erro ao processar a transacao", 500);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         }
     }
 }
