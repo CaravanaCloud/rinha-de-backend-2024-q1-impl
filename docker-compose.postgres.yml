@@ -1,4 +1,4 @@
-version: "3.1"
+version: "3.9"
 
 services:
   api01:
@@ -12,10 +12,10 @@ services:
       - QUARKUS_BANNER_ENABLED=false
 #      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
-      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mysql://db:3306/rinha?useSSL=false&allowPublicKeyRetrieval=true
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=1
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=1
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=1
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://db:5400/rinha
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=150
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=150
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=150
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_TRANSACTION_MANAGER_DEFAULT_TRANSACTION_TIMEOUT=60
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -24,7 +24,7 @@ services:
       - QUARKUS_LOG_LEVEL=DEBUG
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=DEBUG
-      - QUARKUS_LOG_CATEGORY__org.mysql__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "10MB"
+          memory: "90MB"
   api02:
     networks:
       - rinha-net
@@ -59,10 +59,10 @@ services:
       - QUARKUS_BANNER_ENABLED=false
 #      - QUARKUS_HTTP_LIMITS_MAX_CONNECTIONS=60000
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
-      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mysql://db:3306/rinha?useSSL=false&allowPublicKeyRetrieval=true
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=1
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=1
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=1
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://db:5400/rinha
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=150
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=150
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=150
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_TRANSACTION_MANAGER_DEFAULT_TRANSACTION_TIMEOUT=60
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -71,7 +71,7 @@ services:
       - QUARKUS_LOG__LEVEL=DEBUG
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
 #      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
-      - QUARKUS_LOG_CATEGORY__org.mysql__LEVEL=INFO
+      - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.jboss__LEVEL=INFO
@@ -96,7 +96,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "10MB"
+          memory: "90MB"
 
 
   nginx:
@@ -131,36 +131,37 @@ services:
   db:
     networks:
       - rinha-net
-    image: mysql:latest
+    image: postgres:latest
     hostname: db
     container_name: db
     environment:
-      - MYSQL_ROOT_PASSWORD=123
-      - MYSQL_USER=rinha
-      - MYSQL_PASSWORD=123
-      - MYSQL_DATABASE=rinha
-      - MYSQL_TCP_PORT=3306
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_USER=rinha
+      - POSTGRES_DB=rinha
     ports:
-      - "3306:3306" 
+      - "5400:5400"
     expose:
-      - "3306"
+      - "5400"
     volumes:
-      - ./init.mysql.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./my.cnf:/etc/my.cnf
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    # -c max_connections=1000 -c shared_buffers=200MB -c synchronous_commit=off -c fsync=off -c full_page_writes=off  -c log_min_messages=panic -c checkpoint_timeout=600 -c max_wal_size=4096 
+    command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
       resources: 
         limits:
           cpus: "0.70"
           memory: "320MB"
     healthcheck:
-      test: ["CMD", "sleep", "15"]
-      interval: 3s
+      test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
+      interval: 5s
+      timeout: 1s
       retries: 15
-      start_period: 10s
+      start_period: 5s
 
 
 networks:
   rinha-net:
     driver: bridge
     driver_opts:
-      com.docker.network.driver.mtu: 1000
+      com.docker.network.driver.mtu: 9000
