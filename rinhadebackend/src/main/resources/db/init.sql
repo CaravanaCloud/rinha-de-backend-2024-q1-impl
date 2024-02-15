@@ -12,7 +12,7 @@ CREATE TABLE transacoes (
     valor INT NOT NULL,
     tipo CHAR(1) NOT NULL,
     descricao VARCHAR(255) NOT NULL,
-    realizada_em DATETIME(6) NOT NULL DEFAULT NOW(),
+    realizada_em DATETIME NOT NULL DEFAULT now(6),
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
@@ -54,7 +54,7 @@ BEGIN
         
         -- Insert into transacoes
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(6));
 
         SELECT n_saldo, r_limite AS resultado;
     END IF;
