@@ -14,7 +14,8 @@ BEGIN
         diff := p_valor;
     END IF;
 
-    -- PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+    -- Is this necessary?
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
 
 
     UPDATE clientes 
