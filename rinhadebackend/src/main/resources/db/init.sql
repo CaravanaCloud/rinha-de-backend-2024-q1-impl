@@ -77,6 +77,7 @@ BEGIN
     -- Check if the cliente exists
     IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
+        ROLLBACK;
     END IF;
 
     -- Construct and return the entire JSON in a single query
