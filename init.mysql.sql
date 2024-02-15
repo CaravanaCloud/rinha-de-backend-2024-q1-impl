@@ -6,14 +6,6 @@ CREATE TABLE clientes (
     saldo INT NOT NULL DEFAULT 0
 );
 
-
-INSERT INTO clientes (nome, limite) VALUES
-    ('o barato sai caro', 1000 * 100),
-    ('zan corp ltda', 800 * 100),
-    ('les cruders', 10000 * 100),
-    ('padaria joia de cocaia', 100000 * 100),
-    ('kid mais', 5000 * 100);
-
 CREATE TABLE transacoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cliente_id INT NOT NULL,
@@ -23,6 +15,16 @@ CREATE TABLE transacoes (
     realizada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
+
+-- Insert initial data into clientes
+INSERT INTO clientes (nome, limite) VALUES
+    ('o barato sai caro', 1000 * 100),
+    ('zan corp ltda', 800 * 100),
+    ('les cruders', 10000 * 100),
+    ('padaria joia de cocaia', 100000 * 100),
+    ('kid mais', 5000 * 100);
+
+-- procs
 
 CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
 BEGIN
@@ -51,4 +53,39 @@ BEGIN
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
         VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
     END IF;
+END;
+
+CREATE PROCEDURE proc_extrato(IN p_id INT)
+BEGIN
+    -- Variables to hold the JSON components
+    DECLARE saldo_json JSON;
+    DECLARE transacoes_json JSON;
+    
+    -- Get saldo and limite for the cliente
+    SELECT JSON_OBJECT(
+        'total', saldo,
+        'limite', limite
+    ) INTO saldo_json
+    FROM clientes
+    WHERE id = p_id;
+    
+    -- Get the last 10 transacoes for the cliente
+    SELECT COALESCE(JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'valor', valor,
+            'tipo', tipo,
+            'descricao', descricao,
+            'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%T.%fZ')
+        )
+    ), JSON_ARRAY()) INTO transacoes_json
+    FROM transacoes
+    WHERE cliente_id = p_id
+    ORDER BY realizada_em DESC
+    LIMIT 10;
+    
+    -- Build the final JSON result
+    SELECT JSON_OBJECT(
+        'saldo', saldo_json,
+        'ultimas_transacoes', transacoes_json
+    ) AS extrato;
 END;
