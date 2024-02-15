@@ -25,6 +25,7 @@ INSERT INTO clientes (nome, limite) VALUES
     ('kid mais', 5000 * 100);
 
 -- procs
+DELIMITER //
 
 CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
 BEGIN
@@ -53,7 +54,9 @@ BEGIN
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
         VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
     END IF;
-END;
+END //
+
+DELIMITER //
 
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
@@ -88,4 +91,6 @@ BEGIN
         'saldo', saldo_json,
         'ultimas_transacoes', transacoes_json
     ) AS extrato;
-END;
+END //
+
+DELIMITER ;

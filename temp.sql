@@ -1,4 +1,31 @@
+CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
+BEGIN
+    DECLARE v_saldo INT;
+    DECLARE v_limite INT;
+    DECLARE diff INT;
+    
+    -- Determine transaction effect
+    IF p_tipo = 'd' THEN
+        SET diff = p_valor * -1;
+    ELSE
+        SET diff = p_valor;
+    END IF;
 
+    -- Lock the clientes row
+    SELECT saldo, limite INTO v_saldo, v_limite FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+
+    -- Check if the new balance would exceed the limit
+    IF v_saldo + diff < -v_limite THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LIMITE_INDISPONIVEL';
+    ELSE
+        -- Update clientes saldo
+        UPDATE clientes SET saldo = saldo + diff WHERE id = p_cliente_id;
+        
+        -- Insert into transacoes
+        INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+        VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+    END IF;
+END;
 
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
@@ -34,4 +61,3 @@ BEGIN
         'ultimas_transacoes', transacoes_json
     ) AS extrato;
 END;
-
