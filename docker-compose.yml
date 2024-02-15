@@ -46,7 +46,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.30"
           memory: "90MB"
   api02:
     networks:
@@ -95,7 +95,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.30"
           memory: "90MB"
 
 
@@ -150,7 +150,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.80"
+          cpus: "0.70"
           memory: "320MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
@@ -164,4 +164,4 @@ networks:
   rinha-net:
     driver: bridge
     driver_opts:
-      com.docker.network.driver.mtu: 1420
+      com.docker.network.driver.mtu: 9000

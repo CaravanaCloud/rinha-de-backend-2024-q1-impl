@@ -151,7 +151,11 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>-O3,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
+         
+        <quarkus.native.additional-build-args>,-O3,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
+        <!-- TODO Try PGO https://docs.oracle.com/en/graalvm/jdk/21/docs/reference-manual/native-image/guides/optimize-native-executable-with-pgo/#run-a-demo  
+        <quarkus.native.additional-build-args>--pgo-instrument,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
+        -->  
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
