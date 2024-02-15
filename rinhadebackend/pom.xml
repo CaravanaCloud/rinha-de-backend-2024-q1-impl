@@ -151,7 +151,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=90,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>-O3,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
