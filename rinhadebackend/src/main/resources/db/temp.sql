@@ -1,31 +1,6 @@
--- Create tables
-CREATE TABLE clientes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    limite INT NOT NULL,
-    saldo INT NOT NULL DEFAULT 0
-);
 
-CREATE TABLE transacoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cliente_id INT NOT NULL,
-    valor INT NOT NULL,
-    tipo CHAR(1) NOT NULL,
-    descricao VARCHAR(255) NOT NULL,
-    realizada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-);
-
--- Insert initial data into clientes
-INSERT INTO clientes (nome, limite) VALUES
-    ('o barato sai caro', 1000 * 100),
-    ('zan corp ltda', 800 * 100),
-    ('les cruders', 10000 * 100),
-    ('padaria joia de cocaia', 100000 * 100),
-    ('kid mais', 5000 * 100);
-
--- procs
-
+-- Procedure for transactions
+DELIMITER //
 CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
 BEGIN
     DECLARE v_saldo INT;
@@ -53,8 +28,11 @@ BEGIN
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
         VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
     END IF;
-END;
+END //
+DELIMITER ;
 
+-- Procedure for account statement
+DELIMITER //
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
     -- Variables to hold the JSON components
@@ -88,4 +66,5 @@ BEGIN
         'saldo', saldo_json,
         'ultimas_transacoes', transacoes_json
     ) AS extrato;
-END;
+END //
+DELIMITER ;

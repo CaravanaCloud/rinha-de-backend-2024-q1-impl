@@ -29,38 +29,40 @@ public class ExtratoResource {
             @PathParam("id") Integer id) {
         Log.tracef("Extrato solicitado: %s ", id);
 
-        
-        var query = "select * from proc_extrato(?)";
+        // psql var query = "select * from proc_extrato(?)";
+        // mysql
+        var query = "call proc_extrato(?)";
 
         try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(query);) {
+                // psql var stmt = conn.prepareStatement(query);) {
+                var stmt = conn.prepareCall(query);) {
             stmt.setInt(1, id);
-            stmt.execute();
-            try (var rs = stmt.getResultSet()) {
-                if (rs.next()) {
-                    var result = rs.getString(1);
-                    // TODO Verificar: o try-with-resources não fecha o PreparedStatement ????
-                    // public interface PreparedStatement extends Statement {
-                    // public interface Statement extends Wrapper, AutoCloseable {
-                    stmt.close(); 
-                    return Response.ok(result).build();
-                } else {
-                    return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
+            boolean hasResults = stmt.execute();
+            if (hasResults) {
+                try (var rs = stmt.getResultSet()) {
+                    if (rs.next()) {
+                        var result = rs.getString(1); // Assuming the procedure returns a single string JSON as output
+                        return Response.ok(result).build();
+                    } else {
+                        return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
+                    }
                 }
+            } else {
+                return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
                 return Response.status(Status.NOT_FOUND).entity("Cliente nao encontrado").build();
             }
-            //e.printStackTrace();
+            // e.printStackTrace();
             // throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
             Log.debug("Erro ao processar a transacao", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         } catch (Exception e) {
-            //e.printStackTrace();
+            // e.printStackTrace();
             Log.error("Erro ao processar a transacao", e);
-            //throw new WebApplicationException("Erro ao processar a transacao", 500);
+            // throw new WebApplicationException("Erro ao processar a transacao", 500);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         }
     }
