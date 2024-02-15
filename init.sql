@@ -38,7 +38,7 @@ BEGIN
         diff := p_valor;
     END IF;
 
-    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+    -- PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
 
 
     UPDATE clientes 
