@@ -12,7 +12,7 @@ CREATE TABLE transacoes (
     valor INT NOT NULL,
     tipo CHAR(1) NOT NULL,
     descricao VARCHAR(255) NOT NULL,
-    realizada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    realizada_em DATETIME(6) NOT NULL DEFAULT NOW(),
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
