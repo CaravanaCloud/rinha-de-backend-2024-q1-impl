@@ -74,11 +74,11 @@ CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
     -- Variables to hold the JSON components
     DECLARE count INT;
-    DECLARE saldo_json JSON;
-    DECLARE transacoes_json JSON;
+    DECLARE saldo_json VARCHAR(1000); -- Adjust size as necessary
+    DECLARE transacoes_json VARCHAR(1000); -- Adjust size as necessary
     
     -- Get saldo and limite for the cliente
-    SELECT COUNT(*) into count 
+    SELECT COUNT(*) INTO count 
         FROM clientes
         WHERE id = p_id;
 
@@ -86,30 +86,23 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
     END IF;
 
-    SELECT JSON_OBJECT(
-        'total', saldo,
-        'limite', limite
-        ) INTO saldo_json
+    SELECT CONCAT('{"total": ', saldo, ', "limite": ', limite, '}') INTO saldo_json
         FROM clientes
         WHERE id = p_id;
     
     -- Get the last 10 transacoes for the cliente
-    SELECT COALESCE(JSON_ARRAYAGG(
-        JSON_OBJECT(
-            'valor', valor,
-            'tipo', tipo,
-            'descricao', descricao,
-            'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%.%fZ')
-        )
-    ), JSON_ARRAY()) INTO transacoes_json
+    SELECT COALESCE(CONCAT('[', GROUP_CONCAT(JSON_OBJECT(
+        'valor', valor,
+        'tipo', tipo,
+        'descricao', descricao,
+        'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%H:%i:%sZ') SEPARATOR ','
+    )), ']'), '[]') INTO transacoes_json
     FROM transacoes
     WHERE cliente_id = p_id
     ORDER BY realizada_em DESC
     LIMIT 10;
     
-    -- Build the final JSON result
-    SELECT JSON_OBJECT(
-        'saldo', saldo_json,
-        'ultimas_transacoes', transacoes_json
-    ) AS extrato;
+    -- Build and return the final JSON result as a string and then cast to JSON
+    SELECT CAST(CONCAT('{"saldo": ', saldo_json, ', "ultimas_transacoes": ', transacoes_json, '}') AS JSON) AS extrato;
 END;
+

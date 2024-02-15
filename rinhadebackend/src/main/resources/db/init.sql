@@ -39,6 +39,7 @@ BEGIN
 
     IF count = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
+        ROLLBACK;
     END IF;
 
     -- Determine transaction effect
@@ -58,6 +59,7 @@ BEGIN
     -- Check if the new balance would exceed the limit
     IF (n_saldo) < (-1 * r_limite) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LIMITE_INDISPONIVEL';
+        ROLLBACK;
     ELSE
         -- Update clientes saldo
         UPDATE clientes SET saldo = n_saldo WHERE id = p_cliente_id;
@@ -84,6 +86,7 @@ BEGIN
 
     IF count = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
+        ROLLBACK;
     END IF;
 
     SELECT JSON_OBJECT(
