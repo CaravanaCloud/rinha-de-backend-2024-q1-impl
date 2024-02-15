@@ -46,8 +46,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
-          memory: "90MB"
+          cpus: "0.20"
+          memory: "80MB"
   api02:
     networks:
       - rinha-net
@@ -95,8 +95,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
-          memory: "90MB"
+          cpus: "0.20"
+          memory: "80MB"
 
 
   nginx:
@@ -126,7 +126,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "40MB"
+          memory: "50MB"
     
   db:
     networks:
@@ -143,13 +143,14 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./rinhadebackend/src/main/resources/db/init.sql
-    command: 'postgres -c max_connections=1000 -c shared_buffers=200MB -c synchronous_commit=off -c fsync=off -c full_page_writes=off  -c log_min_messages=panic -p 5400'  
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#    command: 'postgres -c max_connections=1000 -c shared_buffers=200MB -c synchronous_commit=off -c fsync=off -c full_page_writes=off  -c log_min_messages=panic -c checkpoint_timeout=600 -c max_wal_size=4096 -p 5400'  
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
     deploy:
       resources: 
         limits:
-          cpus: "0.70"
-          memory: "330MB"
+          cpus: "0.90"
+          memory: "340MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s

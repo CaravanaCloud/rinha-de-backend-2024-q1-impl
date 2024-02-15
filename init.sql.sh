@@ -2,11 +2,12 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SQL_OUT="$DIR/rinhadebackend/src/main/resources/db/init.sql"
 
-echo "-- SQL init" > $SQL_OUT
+printf "-- SQL init \n" > $SQL_OUT
 for i in `ls rinhadebackend/src/main/resources/db/migration/*.sql` ; do
-  echo "-- $i" >> $SQL_OUT
+  printf "-- $i" >> $SQL_OUT
   cat $i >> $SQL_OUT
 done
 
-echo "-- SQL init done" >> $SQL_OUT
+printf "\n-- SQL init done\n" >> $SQL_OUT
+cp "$SQL_OUT" ./init.sql
 cat $SQL_OUT

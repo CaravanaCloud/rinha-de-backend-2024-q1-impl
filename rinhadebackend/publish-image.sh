@@ -1,6 +1,9 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+echo "## Checking registry authentication"
+docker login
+
 # Remember to docker login
 echo "## Building Default image"
 docker build -f "$DIR/src/main/docker/Dockerfile" --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest "$DIR"
