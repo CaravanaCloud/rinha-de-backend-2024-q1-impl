@@ -46,7 +46,7 @@ public class ExtratoResource {
                     if (rs.next()) {
                         var result = rs.getString(1); // Assuming the procedure returns a single string JSON as output
                         //TODO: avoid bad json
-                        result = result.replaceAll("\\\\", "");
+                        // result = result.replaceAll("\\\\", "");
                         return Response.ok(result).build();
                     } else {
                         return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
