@@ -24,13 +24,12 @@ INSERT INTO clientes (nome, limite) VALUES
     ('padaria joia de cocaia', 100000 * 100),
     ('kid mais', 5000 * 100);
 
--- procs
 
-CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
+-- Procedure for transactions
+CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255), OUT r_saldo INT, OUT r_limite INT)
 BEGIN
-    DECLARE v_saldo INT;
-    DECLARE v_limite INT;
     DECLARE diff INT;
+    DECLARE n_saldo INT;
     
     -- Determine transaction effect
     IF p_tipo = 'd' THEN
@@ -40,18 +39,24 @@ BEGIN
     END IF;
 
     -- Lock the clientes row
-    SELECT saldo, limite INTO v_saldo, v_limite FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+    SELECT saldo, limite, r_saldo + diff
+        INTO r_saldo, r_limite, n_saldo
+        FROM clientes 
+        WHERE id = p_cliente_id 
+        FOR UPDATE;
 
     -- Check if the new balance would exceed the limit
-    IF v_saldo + diff < -v_limite THEN
+    IF (n_saldo) < (-1 * r_limite) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LIMITE_INDISPONIVEL';
     ELSE
         -- Update clientes saldo
-        UPDATE clientes SET saldo = saldo + diff WHERE id = p_cliente_id;
+        UPDATE clientes SET saldo = n_saldo WHERE id = p_cliente_id;
         
         -- Insert into transacoes
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
-        VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+
+        SELECT n_saldo, r_limite AS resultado;
     END IF;
 END;
 

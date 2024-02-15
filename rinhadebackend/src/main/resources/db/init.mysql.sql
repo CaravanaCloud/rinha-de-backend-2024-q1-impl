@@ -26,10 +26,8 @@ INSERT INTO clientes (nome, limite) VALUES
 
 -- Procedure for transactions
 DELIMITER //
-CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
+CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255), OUT v_saldo INT, OUT v_limite INT,ysq)
 BEGIN
-    DECLARE v_saldo INT;
-    DECLARE v_limite INT;
     DECLARE diff INT;
     
     -- Determine transaction effect
@@ -40,7 +38,11 @@ BEGIN
     END IF;
 
     -- Lock the clientes row
-    SELECT saldo, limite INTO v_saldo, v_limite FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+    SELECT saldo, limite 
+        INTO v_saldo, v_limite 
+        FROM clientes 
+        WHERE id = p_cliente_id 
+        FOR UPDATE;
 
     -- Check if the new balance would exceed the limit
     IF v_saldo + diff < -v_limite THEN
@@ -51,7 +53,7 @@ BEGIN
         
         -- Insert into transacoes
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
-        VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
     END IF;
 END //
 DELIMITER ;
