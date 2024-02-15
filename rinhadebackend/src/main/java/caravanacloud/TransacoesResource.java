@@ -1,5 +1,6 @@
 package caravanacloud;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class TransacoesResource {
 
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareCall(query)) {
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
             stmt.setInt(1, id);
             stmt.setInt(2, valor);
@@ -87,8 +89,8 @@ public class TransacoesResource {
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
-            Log.warnf("Message %s", e.getMessage());
-            Log.warnf("Code: "+e.getErrorCode());
+            //Log.warnf("Message %s", e.getMessage());
+            //Log.warnf("Code: "+e.getErrorCode());
             if (msg != null){
                 if (msg.contains("LIMITE_INDISPONIVEL")) {
                     return Response.status(422).entity("Erro: Limite indisponivel").build();

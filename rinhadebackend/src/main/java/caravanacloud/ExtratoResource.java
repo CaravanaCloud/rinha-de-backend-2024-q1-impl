@@ -1,5 +1,6 @@
 package caravanacloud;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
@@ -36,6 +37,7 @@ public class ExtratoResource {
         try (var conn = ds.getConnection();
                 // psql var stmt = conn.prepareStatement(query);) {
                 var stmt = conn.prepareCall(query);) {
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             stmt.setInt(1, id);
             boolean hasResults = stmt.execute();
             if (hasResults) {
@@ -55,14 +57,12 @@ public class ExtratoResource {
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
                 return Response.status(Status.NOT_FOUND).entity("Cliente nao encontrado").build();
             }
-            // e.printStackTrace();
-            // throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            e.printStackTrace();
             Log.debug("Erro ao processar a transacao", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         } catch (Exception e) {
-            // e.printStackTrace();
+             e.printStackTrace();
             Log.error("Erro ao processar a transacao", e);
-            // throw new WebApplicationException("Erro ao processar a transacao", 500);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         }
     }
