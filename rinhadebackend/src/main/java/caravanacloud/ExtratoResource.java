@@ -25,7 +25,8 @@ public class ExtratoResource {
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional // TODO Verificar: Transactional para select??? é necessário???
+    @Transactional(Transactional.TxType.REQUIRES_NEW) 
+    // TODO Verificar: Transactional para select??? é necessário???
     public Response getExtrato(
             @PathParam("id") Integer id) {
         Log.tracef("Extrato solicitado: %s ", id);
@@ -37,7 +38,7 @@ public class ExtratoResource {
         try (var conn = ds.getConnection();
                 // psql var stmt = conn.prepareStatement(query);) {
                 var stmt = conn.prepareCall(query);) {
-            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             stmt.setInt(1, id);
             boolean hasResults = stmt.execute();
             if (hasResults) {

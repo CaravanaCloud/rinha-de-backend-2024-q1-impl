@@ -29,7 +29,7 @@ public class TransacoesResource {
     // http://localhost:9999/clientes/1/transacoes
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public Response postTransacao(
             @PathParam("id") Integer id,
             Map<String, Object> t) {
@@ -86,6 +86,9 @@ public class TransacoesResource {
                 } else{
                     return Response.status(500).entity("Erro: no next").build();
                 }
+            }catch(SQLException e){
+                e.printStackTrace();
+                return Response.status(404).entity("NAO ENTROU").build();
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
@@ -97,7 +100,10 @@ public class TransacoesResource {
                 }
                 if (msg.contains("fk_clientes_transacoes_id")) {
                     return Response.status(Status.NOT_FOUND).entity("Erro: Cliente inexistente").build();
-                }    
+                }
+                if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
+                    return Response.status(Status.NOT_FOUND).entity("Erro: Cliente inexistente").build();
+                }
             }
             Log.debug("Erro ao processar a transacao - sql", e);
             e.printStackTrace();
