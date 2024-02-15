@@ -12,9 +12,9 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 @Path("/clientes/{id}/transacoes")
 public class TransacoesResource {
@@ -29,6 +29,7 @@ public class TransacoesResource {
             Map<String, Object> t) {
         Log.tracef("Transacao recebida: %s %s ", id, t);
 
+        // TODO Uma validação por vez ou múltiplas validações conjuntas ???
         var valorNumber = (Number) t.get("valor");
         if (valorNumber == null
                 || !Integer.class.equals(valorNumber.getClass())) {
@@ -82,14 +83,17 @@ public class TransacoesResource {
                 return Response.status(422).entity("Erro: Limite indisponivel").build();
             }
             if (msg.contains("fk_clientes_transacoes_id")) {
-                return Response.status(404).entity("Erro: Cliente inexistente").build();
+                return Response.status(Status.NOT_FOUND).entity("Erro: Cliente inexistente").build();
             }
             //e.printStackTrace();
-            throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            //throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            Log.debug("Erro ao processar a transacao", e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         } catch (Exception e) {
             //e.printStackTrace();
-            Log.debug("Erro ao processar a transacao", e);
-            throw new WebApplicationException("Erro ao processar a transacao", 500);
+            Log.error("Erro ao processar a transacao", e);
+            //throw new WebApplicationException("Erro ao processar a transacao", 500);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         }
     }
 
