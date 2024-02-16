@@ -31,7 +31,7 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 USER $USERNAME
 
 ## Setup JDK
-ARG JAVA_SDK="21.0.2-graalce"
+ARG JAVA_SDK="21.0.2-graal"
 RUN curl -s "https://get.sdkman.io" | bash 
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && sdk install java $JAVA_SDK \
