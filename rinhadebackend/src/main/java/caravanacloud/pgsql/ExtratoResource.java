@@ -1,4 +1,4 @@
-package caravanacloud;
+package caravanacloud.pgsql;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-@Path("/clientes/{id}/transacoes")
+@Path("/pgsq/clientes/{id}/transacoes")
 public class TransacoesResource {
     @Inject
     DataSource ds;

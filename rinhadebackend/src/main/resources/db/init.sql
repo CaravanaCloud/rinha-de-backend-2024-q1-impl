@@ -26,7 +26,7 @@ CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo V
 BEGIN
     DECLARE diff INT;
     DECLARE n_saldo INT;
-    SET autocommit=0; 
+    
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
     START TRANSACTION;
 
@@ -64,16 +64,15 @@ END;
 
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
-    SET autocommit=0; 
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
     START TRANSACTION READ ONLY;
+
 
     IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
         ROLLBACK;
     END IF;
 
-    -- Construct and return the entire JSON in a single query
     SELECT JSON_OBJECT(
         'saldo', (
             SELECT JSON_OBJECT(
