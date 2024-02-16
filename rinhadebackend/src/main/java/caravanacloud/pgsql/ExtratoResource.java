@@ -1,92 +1,60 @@
 package caravanacloud.pgsql;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 import javax.sql.DataSource;
 
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-@Path("/pgsq/clientes/{id}/transacoes")
-public class TransacoesResource {
+@Path("/pgsql/clientes/{id}/extrato")
+public class ExtratoResource {
+
     @Inject
     DataSource ds;
 
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
-    public Response postTransacao(
-            @PathParam("id") Integer id,
-            Map<String, Object> t) {
-        Log.tracef("Transacao recebida: %s %s ", id, t);
+    // curl -v -X GET http://localhost:9999/clientes/1/extrato
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional // TODO Verificar: Transactional para select??? é necessário???
+    public Response getExtrato(
+            @PathParam("id") Integer id) {
+        Log.tracef("Extrato solicitado: %s ", id);
 
-        // TODO Uma validação por vez ou múltiplas validações conjuntas ???
-        var valorNumber = (Number) t.get("valor");
-        if (valorNumber == null
-                || !Integer.class.equals(valorNumber.getClass())) {
-            return Response.status(422).entity("Valor invalido").build();
-        }
-        Integer valor = valorNumber.intValue();
-
-        var tipo = (String) t.get("tipo");
-        if (tipo == null
-                || !("c".equals(tipo) || "d".equals(tipo))) {
-            return Response.status(422).entity("Tipo invalido").build();
-        }
-
-        var descricao = (String) t.get("descricao");
-        if (descricao == null
-                || descricao.isEmpty()
-                || descricao.length() > 10) {
-            return Response.status(422).entity("Descricao invalida").build();
-        }
-
-        var query = "select * from proc_transacao(?, ?, ?, ?)";
+        
+        var query = "select * from proc_extrato(?)";
 
         try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(query);) { // TODO cache statement?
+                var stmt = conn.prepareStatement(query);) {
             stmt.setInt(1, id);
-            stmt.setInt(2, valor);
-            stmt.setString(3, tipo);
-            stmt.setString(4, descricao);
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
                 if (rs.next()) {
-                    Integer saldo = rs.getInt("saldo");
-                    Integer limite = rs.getInt("limite");
-
-                    if (saldo < -1 * limite) {
-                        Log.error("*** LIMITE ULTRAPASSADO " + saldo + " / " + limite);
-                        Log.error(t);
-                    }
-
-                    var body = Map.of("limite", limite,
-                            "saldo", saldo);
-                    stmt.close();
-                    return Response.ok(body).build();
+                    var result = rs.getString(1);
+                    // TODO Verificar: o try-with-resources não fecha o PreparedStatement ????
+                    // public interface PreparedStatement extends Statement {
+                    // public interface Statement extends Wrapper, AutoCloseable {
+                    stmt.close(); 
+                    return Response.ok(result).build();
                 } else {
-                    return Response.status(500).entity("Erro ao processar a transacao").build();
+                    return Response.status(Status.NOT_FOUND).entity("Extrato nao encontrado").build();
                 }
             }
         } catch (SQLException e) {
             var msg = e.getMessage();
-            if (msg.contains("LIMITE_INDISPONIVEL")) {
-                return Response.status(422).entity("Erro: Limite indisponivel").build();
-            }
-            if (msg.contains("fk_clientes_transacoes_id")) {
-                return Response.status(Status.NOT_FOUND).entity("Erro: Cliente inexistente").build();
+            if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
+                return Response.status(Status.NOT_FOUND).entity("Cliente nao encontrado").build();
             }
             //e.printStackTrace();
-            //throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
+            // throw new WebApplicationException("Erro SQL ao processar a transacao", 500);
             Log.debug("Erro ao processar a transacao", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         } catch (Exception e) {
@@ -96,5 +64,4 @@ public class TransacoesResource {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Erro SQL ao processar a transacao").build();
         }
     }
-
 }
