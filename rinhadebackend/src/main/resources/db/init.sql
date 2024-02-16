@@ -1,101 +1,101 @@
-CREATE TABLE clientes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    limite INT NOT NULL,
-    saldo INT NOT NULL DEFAULT 0
-) ENGINE = InnoDB;
+CREATE UNLOGGED TABLE clientes (
+	id SERIAL PRIMARY KEY,
+	nome VARCHAR(255) NOT NULL,
+	limite INTEGER NOT NULL,
+	saldo INTEGER NOT NULL DEFAULT 0
+);
 
-CREATE TABLE transacoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cliente_id INT NOT NULL,
-    valor INT NOT NULL,
-    tipo CHAR(1) NOT NULL,
-    descricao VARCHAR(255) NOT NULL,
-    realizada_em DATETIME NOT NULL DEFAULT now(),
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-) ENGINE = InnoDB;
+CREATE UNLOGGED TABLE transacoes (
+	id SERIAL PRIMARY KEY,
+	cliente_id INTEGER NOT NULL,
+	valor INTEGER NOT NULL,
+	tipo CHAR(1) NOT NULL,
+	descricao VARCHAR(255) NOT NULL,
+	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+	CONSTRAINT fk_clientes_transacoes_id
+		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+);
 
 INSERT INTO clientes (nome, limite) VALUES
-    ('o barato sai caro', 1000 * 100),
-    ('zan corp ltda', 800 * 100),
-    ('les cruders', 10000 * 100),
-    ('padaria joia de cocaia', 100000 * 100),
-    ('kid mais', 5000 * 100);
+	('o barato sai caro', 1000 * 100),
+	('zan corp ltda', 800 * 100),
+	('les cruders', 10000 * 100),
+	('padaria joia de cocaia', 100000 * 100),
+	('kid mais', 5000 * 100);
+CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
-CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255), OUT r_saldo INT, OUT r_limite INT)
+CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
+RETURNS transacao_result as $$
+DECLARE
+    diff INT;
+    v_saldo INT;
+    v_limite INT;
+    result transacao_result;
 BEGIN
-    DECLARE diff INT;
-    DECLARE n_saldo INT;
-    
-    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-    START TRANSACTION;
-
-    IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_cliente_id) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
-        ROLLBACK;
-    END IF;
-
     IF p_tipo = 'd' THEN
-        SET diff = p_valor * -1;
+        diff := p_valor * -1;
     ELSE
-        SET diff = p_valor;
+        diff := p_valor;
     END IF;
 
-    SELECT saldo, limite, saldo + diff
-        INTO r_saldo, r_limite, n_saldo
-        FROM clientes 
-        WHERE id = p_cliente_id 
-        FOR UPDATE;
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
 
-    IF (n_saldo) < (-1 * r_limite) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LIMITE_INDISPONIVEL';
+
+    UPDATE clientes 
+        SET saldo = saldo + diff 
+        WHERE id = p_cliente_id
+        RETURNING saldo, limite INTO v_saldo, v_limite;
+
+    IF (v_saldo + diff) < (-1 * v_limite) THEN
+        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+    ELSE
+        result := (v_saldo, v_limite)::transacao_result;
+        INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+        RETURN result;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE 'Error processing transaction: %', SQLERRM;
         ROLLBACK;
-    ELSE
-        UPDATE clientes SET saldo = n_saldo WHERE id = p_cliente_id;
-        
-        INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(6));
-
-        SELECT n_saldo, r_limite AS resultado;
-
-        COMMIT;
-    END IF;
 END;
-
-CREATE PROCEDURE proc_extrato(IN p_id INT)
+$$ LANGUAGE plpgsql;CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
+RETURNS json AS $$
+DECLARE
+    result json;
+    row_count integer;
+    v_saldo numeric;
+    v_limite numeric;
 BEGIN
-    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-    START TRANSACTION READ ONLY;
+    SELECT saldo, limite
+    INTO v_saldo, v_limite
+    FROM clientes
+    WHERE id = p_id;
 
+    GET DIAGNOSTICS row_count = ROW_COUNT;
 
-    IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'CLIENTE_NAO_ENCONTRADO';
-        ROLLBACK;
+    IF row_count = 0 THEN
+        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_id;
     END IF;
 
-    SELECT JSON_OBJECT(
-        'saldo', (
-            SELECT JSON_OBJECT(
-                'total', saldo,
-                'limite', limite
-            )
-            FROM clientes
-            WHERE id = p_id
+    SELECT json_build_object(
+        'saldo', json_build_object(
+            'total', v_saldo,
+            'data_extrato', TO_CHAR(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+            'limite', v_limite
         ),
-        'ultimas_transacoes', (
-            SELECT COALESCE(JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'valor', valor,
-                    'tipo', tipo,
-                    'descricao', descricao,
-                    'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%dT%H:%i:%sZ')
-                )
-            ), JSON_ARRAY()) 
-            FROM transacoes
-            WHERE cliente_id = p_id
-            ORDER BY realizada_em DESC
-            LIMIT 10
-        )
-    ) AS extrato;
-    COMMIT; 
+        'ultimas_transacoes', COALESCE((
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as realizada_em
+                FROM transacoes
+                WHERE cliente_id = p_id
+                ORDER BY realizada_em DESC
+                LIMIT 10
+            ) t
+        ), '[]')
+    ) INTO result;
+
+    RETURN result;
 END;
+$$ LANGUAGE plpgsql;
+-- SQL init done
