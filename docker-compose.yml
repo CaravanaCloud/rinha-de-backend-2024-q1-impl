@@ -21,7 +21,7 @@ services:
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
-      - QUARKUS_LOG_LEVEL=DEBUG
+      - QUARKUS_LOG_LEVEL=ERROR
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=DEBUG
       - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "70MB"
+          memory: "60MB"
   api02:
     networks:
       - rinha-net
@@ -68,7 +68,7 @@ services:
 #      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
-      - QUARKUS_LOG__LEVEL=DEBUG
+      - QUARKUS_LOG__LEVEL=ERROR
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
 #      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
@@ -96,7 +96,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "70MB"
+          memory: "60MB"
 
 
   nginx:
@@ -143,14 +143,14 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./rinhadebackend/src/main/resources/db/init.postgresql.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
       resources: 
         limits:
           cpus: "0.70"
-          memory: "370MB"
+          memory: "390MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
