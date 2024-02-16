@@ -10,8 +10,8 @@ CREATE UNLOGGED TABLE transacoes (
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
-	descricao VARCHAR(255) NOT NULL,
-	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+	descricao CHAR(12) NOT NULL,
+	realizada_em TIMESTAMP(6) NOT NULL DEFAULT NOW(),
 	CONSTRAINT fk_clientes_transacoes_id
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
@@ -22,24 +22,59 @@ INSERT INTO clientes (nome, limite) VALUES
 	('les cruders', 10000 * 100),
 	('padaria joia de cocaia', 100000 * 100),
 	('kid mais', 5000 * 100);
-CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
-CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
-RETURNS transacao_result as $$
+CREATE TYPE fn_result AS (
+    status_code INT,
+    json_text TEXT
+);
+
+CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, txx json)
+RETURNS fn_result AS $$
 DECLARE
+    result fn_result;    
+    p_valor_txt VARCHAR;
+    p_valor INT;
+    p_tipo CHAR(1);
+    p_descricao VARCHAR;
     diff INT;
     v_saldo INT;
     v_limite INT;
-    result transacao_result;
+
 BEGIN
+    p_valor_txt := (txx->>'valor');
+    p_tipo := txx->>'tipo';
+    p_descricao := txx->>'descricao';
+
+    -- Validate valor
+    IF p_valor_txt IS NULL OR p_valor_txt !~ '^\-?\d+$' THEN
+        result.status_code := 422;
+        result.json_text   := json_build_object('error', 'valor invalida');
+        RETURN result;
+    END IF;
+    SELECT CAST(p_valor_txt AS INT) into p_valor;
+
+
+    -- Validate tipo
+    IF p_tipo IS NULL OR (p_tipo != 'c' AND p_tipo != 'd') THEN
+        result.status_code := 422;
+        result.json_text   := json_build_object('error', 'tipo invalida');
+        RETURN result;    
+    END IF;
+
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
     ELSE
         diff := p_valor;
     END IF;
 
-    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+    -- Validate descricao
+    IF p_descricao IS NULL OR LENGTH(p_descricao) = 0 OR LENGTH(p_descricao) > 10 THEN
+        result.status_code := 422;
+        result.json_text   := json_build_object('error', 'descricao invalida');
+        RETURN result;
+    END IF;
 
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
 
     UPDATE clientes 
         SET saldo = saldo + diff 
@@ -47,18 +82,25 @@ BEGIN
         RETURNING saldo, limite INTO v_saldo, v_limite;
 
     IF (v_saldo + diff) < (-1 * v_limite) THEN
-        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+        result.status_code := 422;
+        result.json_text   := json_build_object('error', 'limite ultrapassado');
+        RETURN result;   
     ELSE
-        result := (v_saldo, v_limite)::transacao_result;
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
             VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+
+        result.status_code := 200;
+        result.json_text   := json_build_object('saldo', v_saldo, 'limite', v_limite);
         RETURN result;
     END IF;
+
 EXCEPTION
     WHEN OTHERS THEN
         RAISE 'Error processing transaction: %', SQLERRM;
         ROLLBACK;
 END;
+
+
 $$ LANGUAGE plpgsql;CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
 RETURNS json AS $$
 DECLARE
