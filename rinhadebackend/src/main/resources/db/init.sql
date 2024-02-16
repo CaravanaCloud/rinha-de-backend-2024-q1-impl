@@ -40,7 +40,7 @@ BEGIN
         SET diff = p_valor;
     END IF;
 
-    SELECT saldo, limite, r_saldo + diff
+    SELECT saldo, limite, saldo + diff
         INTO r_saldo, r_limite, n_saldo
         FROM clientes 
         WHERE id = p_cliente_id 
