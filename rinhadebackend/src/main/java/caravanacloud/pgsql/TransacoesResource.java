@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-@Path("/clientes/{id}/transacoes")
+@Path("/pgsql/clientes/{id}/transacoes")
 public class TransacoesResource {
     @Inject
     DataSource ds;
