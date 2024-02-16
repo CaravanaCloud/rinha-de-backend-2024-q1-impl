@@ -1,4 +1,13 @@
 
+
+
+
+
+
+
+
+
+
 -- Procedure for transactions
 DELIMITER //
 CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo VARCHAR(1), IN p_descricao VARCHAR(255))
