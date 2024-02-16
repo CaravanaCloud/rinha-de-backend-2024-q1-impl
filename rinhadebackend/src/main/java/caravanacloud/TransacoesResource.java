@@ -57,7 +57,7 @@ public class TransacoesResource {
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareCall(query)) {
             conn.setAutoCommit(false);
-            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
             stmt.setInt(1, id);
             stmt.setInt(2, valor);

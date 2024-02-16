@@ -3,7 +3,7 @@ CREATE TABLE clientes (
     nome VARCHAR(255) NOT NULL,
     limite INT NOT NULL,
     saldo INT NOT NULL DEFAULT 0
-);
+) ENGINE = InnoDB;
 
 CREATE TABLE transacoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -13,7 +13,7 @@ CREATE TABLE transacoes (
     descricao VARCHAR(255) NOT NULL,
     realizada_em DATETIME NOT NULL DEFAULT now(),
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
-);
+) ENGINE = InnoDB;
 
 INSERT INTO clientes (nome, limite) VALUES
     ('o barato sai caro', 1000 * 100),
@@ -26,7 +26,8 @@ CREATE PROCEDURE proc_transacao(IN p_cliente_id INT, IN p_valor INT, IN p_tipo V
 BEGIN
     DECLARE diff INT;
     DECLARE n_saldo INT;
-    
+    SET autocommit=0; 
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
     START TRANSACTION;
 
     IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_cliente_id) THEN
@@ -40,7 +41,7 @@ BEGIN
         SET diff = p_valor;
     END IF;
 
-    SELECT saldo, limite, r_saldo + diff
+    SELECT saldo, limite, saldo + diff
         INTO r_saldo, r_limite, n_saldo
         FROM clientes 
         WHERE id = p_cliente_id 
@@ -63,6 +64,8 @@ END;
 
 CREATE PROCEDURE proc_extrato(IN p_id INT)
 BEGIN
+    SET autocommit=0; 
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
     START TRANSACTION READ ONLY;
 
     IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
