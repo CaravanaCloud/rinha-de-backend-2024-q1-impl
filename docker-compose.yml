@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.40"
-          memory: "100MB"
+          memory: "80MB"
   api02:
     networks:
       - rinha-net
@@ -96,7 +96,7 @@ services:
       resources:
         limits:
           cpus: "0.40"
-          memory: "100MB"
+          memory: "80MB"
 
 
   nginx:
@@ -150,7 +150,7 @@ services:
       resources: 
         limits:
           cpus: "0.50"
-          memory: "310MB"
+          memory: "350MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 5s
