@@ -29,7 +29,7 @@ public class TransacoesResource {
     // http://localhost:9999/clientes/1/transacoes
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.NEVER) 
     public Response postTransacao(
             @PathParam("id") Integer id,
             Map<String, Object> t) {
@@ -56,6 +56,7 @@ public class TransacoesResource {
 
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareCall(query)) {
+            conn.setAutoCommit(false);
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
             stmt.setInt(1, id);
