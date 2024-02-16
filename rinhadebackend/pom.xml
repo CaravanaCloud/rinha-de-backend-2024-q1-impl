@@ -44,49 +44,19 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-agroal</artifactId>
     </dependency>
- 
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-postgresql</artifactId>
     </dependency>
-    
-    <!--
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-mariadb</artifactId>
+      <artifactId>quarkus-undertow</artifactId>
     </dependency>
-    -->
-    <!--
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-flyway</artifactId>
-    </dependency>
-    -->
-    <!-- 
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-infinispan-client</artifactId>
-    </dependency>
-    
-    <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-core</artifactId>
-        <version>14.0.24.Final</version>
-    </dependency>
-
-    <dependency>
-        <groupId>javax.transaction</groupId>
-        <artifactId>jta</artifactId>
-        <version>1.1</version>
-    </dependency>
-    -->
-
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
@@ -160,9 +130,6 @@
       </activation>
       <properties>
         <quarkus.native.additional-build-args>,-O3,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
-        <!-- TODO Try PGO https://docs.oracle.com/en/graalvm/jdk/21/docs/reference-manual/native-image/guides/optimize-native-executable-with-pgo/#run-a-demo  
-        <quarkus.native.additional-build-args>pgo-instrument,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
-        -->  
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
