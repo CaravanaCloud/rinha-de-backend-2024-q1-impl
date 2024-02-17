@@ -45,7 +45,8 @@ public class CacheProducer {
             .cacheMode(CacheMode.DIST_SYNC)
             .encoding()
             .mediaType("application/x-java-serialized-object");
-        builder
+        /*
+            builder
             .transaction()
             .lockingMode(LockingMode.PESSIMISTIC)
             .autoCommit(false)
@@ -59,7 +60,8 @@ public class CacheProducer {
             //.cacheStopTimeout(30000)
             //
             //.recovery();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+         */
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Log.info("Shutting down cache...");
             cacheManager.stop();
         }));
