@@ -16,6 +16,10 @@ CREATE UNLOGGED TABLE transacoes (
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
+-- ?
+CREATE INDEX idx_tranacoes_realizada_em ON transacoes(realizada_em);
+
+
 INSERT INTO clientes (nome, limite) VALUES
 	('o barato sai caro', 1000 * 100),
 	('zan corp ltda', 800 * 100),

@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -29,6 +30,23 @@ public class RinhaServlet extends HttpServlet {
     @Inject
     DataSource ds;
 
+    @Override
+    public void init() throws ServletException {        
+        super.init();
+        Log.info("Warmimg....");
+        try {
+            processExtrato(1,null);
+            postTransacao(1, Map.of(
+                "valor", "0",
+                "tipo", "c",
+                "descricao", "warmup"
+            ), 
+            null);
+        }catch(Exception e){
+            Log.errorf(e, "Warmuyp failed");
+        }
+    }
+    
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -60,6 +78,7 @@ public class RinhaServlet extends HttpServlet {
             stmt.setInt(1, id);
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
+                if (resp == null) return;
                 if (rs.next()) {
                     var result = rs.getString(1);
                     resp.setContentType("application/json");
@@ -149,6 +168,7 @@ public class RinhaServlet extends HttpServlet {
             stmt.execute();
 
             try (var rs = stmt.getResultSet()) {
+                if (resp == null) return;
                 if (rs.next()) {
                     Integer saldo = rs.getInt("saldo");
                     Integer limite = rs.getInt("limite");
