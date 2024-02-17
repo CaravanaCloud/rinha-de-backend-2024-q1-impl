@@ -115,7 +115,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--gc=G1,--gc=G1, -O3,--march=native,--initialize-at-build-time,--install-exit-handlers,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>-O3,--initialize-at-build-time,--install-exit-handlers,-H:+UnlockExperimentalVMOptions,-R:MaximumHeapSizePercent=95,-H:-UnlockExperimentalVMOptions</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>

@@ -11,9 +11,9 @@ FROM fedora:39 as build
 # Root level
 USER root
 ENV PATH="/usr/bin:${PATH}"
-# RUN bash -c "dnf install -y zip unzip gcc glibc-devel zlib-devel libstdc++-static"
-# RUN bash -c "dnf upgrade"
 RUN bash -c "dnf install -y zip unzip gcc glibc-devel zlib-devel libstdc++-static"
+# RUN bash -c "dnf upgrade"
+
 
 # Docker
 # RUN bash -c "dnf -y install dnf-plugins-core"
@@ -32,7 +32,7 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 USER $USERNAME
 
 ## Setup JDK
-ARG JAVA_SDK="21.0.2-graalce"
+ARG JAVA_SDK="21.0.2-graal"
 RUN curl -s "https://get.sdkman.io" | bash 
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && sdk install java $JAVA_SDK \
@@ -47,7 +47,7 @@ WORKDIR "/home/$USERNAME/quarkus-app"
 COPY --chown=$USERNAME . .
 
 ## Build
-ARG MVN_XOPTS="-Dnative -fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+ARG MVN_XOPTS="-Dnative  -fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && mvn $MVN_XOPTS install"
 
