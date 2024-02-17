@@ -3,6 +3,8 @@ package caravanacloud;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -11,42 +13,49 @@ import javax.sql.DataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.infinispan.Cache;
 
 @WebServlet("/*")
 public class RinhaServlet extends HttpServlet {
     private static final Pattern EXTRATO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(extrato)$");
-    private static final Pattern TRANSACAO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(transacoes)$"); 
+    private static final Pattern TRANSACAO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(transacoes)$");
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
-    private static final String TRANSACAO_QUERY =  "select * from proc_transacao(?, ?, ?, ?)";
-
+    private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
+    private static final String TRANSACOES_QUERY = "select * from transacoes where cliente_id = ? order by realizada_em desc limit 10";
+    private static final String CLIENTE_QUERY = "select * from clientes where id = ?";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
     DataSource ds;
 
+    @Inject
+    Cache<Integer,Cliente> cache;
+
     @Override
-    public void init() throws ServletException {        
+    public void init() throws ServletException {
         super.init();
         Log.info("Warmimg....");
         try {
-            processExtrato(1,null);
+            processExtrato(1, null);
             postTransacao(1, Map.of(
-                "valor", "0",
-                "tipo", "c",
-                "descricao", "warmup"
-            ), 
-            null);
-        }catch(Exception e){
+                    "valor", 0,
+                    "tipo", "c",
+                    "descricao", "warmup"),
+                    null);
+        } catch (Exception e) {
             Log.errorf(e, "Warmuyp failed");
         }
     }
-    
+
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -72,22 +81,73 @@ public class RinhaServlet extends HttpServlet {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL format or resource not found");
     }
 
-    private void processExtrato(Integer id, HttpServletResponse resp) throws IOException{
+    private LinkedList<Transacao> loadTransacoes(Integer id) throws SQLException{
+        var result = new LinkedList<Transacao>();
         try (var conn = ds.getConnection();
-             var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
+                var stmt = conn.prepareStatement(TRANSACOES_QUERY)){
             stmt.setInt(1, id);
-            stmt.execute();
-            try (var rs = stmt.getResultSet()) {
-                if (resp == null) return;
-                if (rs.next()) {
-                    var result = rs.getString(1);
-                    resp.setContentType("application/json");
-                    resp.setCharacterEncoding("UTF-8");
-                    resp.getWriter().write(result);
-                } else {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Extrato nao encontrado");
+            try (var rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    var valor = rs.getInt("valor");
+                    var tipo = rs.getString("tipo");
+                    var descricao = rs.getString("descricao");
+                    var txx = Transacao.of(valor, tipo, descricao);
+                    result.add(txx);
                 }
             }
+        }
+        return result;
+    }
+
+    private Cliente loadCliente(Integer id) throws SQLException{
+        try (var conn = ds.getConnection();
+                var stmt = conn.prepareStatement(CLIENTE_QUERY)) {
+            stmt.setInt(1, id);
+            try (var rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    var saldo = rs.getInt("saldo");
+                    var limite = rs.getInt("limite");
+                    var cliente = Cliente.of(id, saldo, limite);
+                    return cliente;
+                } else {
+                    Log.warn("No resultset resturned from proc_extrato");
+                    return null;
+                }
+            }
+        }   
+    }
+
+    private Cliente loadExtrato(Integer id) throws SQLException {
+        var cliente = loadCliente(id);
+        var extrato = loadTransacoes(id);
+        cliente.transacoes = extrato;
+        return cliente;
+    }
+    
+
+    private Cliente getExtrato(Integer id )  throws SQLException {
+        var extrato = cache.get(id);
+        if(extrato == null){
+            Log.debugf("Cliente [%s] cache MISS, loading from database",id);
+            extrato = loadExtrato(id);
+            cache.put(id, extrato);
+        }else {
+            Log.debugf("Cliente [%s] cache HIT, loading from database",id);
+
+        }
+        return extrato;
+    } 
+
+    private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
+        try {
+            var extrato = getExtrato(id);
+            Log.info("Loading database extrato");
+            if (resp == null)
+                return;
+            var result = objectMapper.writeValueAsString(extrato);
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write(result);
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
@@ -98,11 +158,15 @@ public class RinhaServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            if (resp == null)
+                return;
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
         }
     }
 
-    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
+    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
+    // "tipo": "c", "descricao": "Deposito"}'
+    // http:///localhost:9999/clientes/1/transacoes
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
@@ -114,8 +178,6 @@ public class RinhaServlet extends HttpServlet {
         // Use the static pattern to match the path info
         var matcher = TRANSACAO_PATTERN.matcher(pathInfo);
 
-        
-        
         Map<String, Object> t;
         try (BufferedReader reader = req.getReader()) {
             t = objectMapper.readValue(reader, Map.class);
@@ -158,9 +220,8 @@ public class RinhaServlet extends HttpServlet {
             return;
         }
 
-
         try (var conn = ds.getConnection();
-             var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
+                var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
             stmt.setInt(1, id);
             stmt.setInt(2, valor);
             stmt.setString(3, tipo);
@@ -168,7 +229,8 @@ public class RinhaServlet extends HttpServlet {
             stmt.execute();
 
             try (var rs = stmt.getResultSet()) {
-                if (resp == null) return;
+                if (resp == null)
+                    return;
                 if (rs.next()) {
                     Integer saldo = rs.getInt("saldo");
                     Integer limite = rs.getInt("limite");
