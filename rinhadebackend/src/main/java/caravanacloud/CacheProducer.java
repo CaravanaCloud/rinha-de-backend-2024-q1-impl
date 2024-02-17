@@ -11,6 +11,10 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
+import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
@@ -41,7 +45,20 @@ public class CacheProducer {
             .cacheMode(CacheMode.DIST_SYNC)
             .encoding()
             .mediaType("application/x-java-serialized-object");
-    
+        builder
+            .transaction()
+            .lockingMode(LockingMode.PESSIMISTIC)
+            .autoCommit(false)
+            .completedTxTimeout(60000)
+            .transactionMode(TransactionMode.TRANSACTIONAL)
+            //.transactionManagerLookup(new GenericTransactionManagerLookup());
+            .transactionManagerLookup(new EmbeddedTransactionManagerLookup());            
+            //.useSynchronization(false)
+            //.notifications(true)
+            //.reaperWakeUpInterval(30000)
+            //.cacheStopTimeout(30000)
+            //
+            //.recovery();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Log.info("Shutting down cache...");
             cacheManager.stop();

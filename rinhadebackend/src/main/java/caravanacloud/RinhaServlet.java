@@ -3,6 +3,7 @@ package caravanacloud;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import com.aayushatharva.brotli4j.common.annotations.Local;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.logging.Log;
@@ -22,9 +24,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+
 import org.infinispan.Cache;
 
 @WebServlet("/*")
+@Transactional
 public class RinhaServlet extends HttpServlet {
     private static final Pattern EXTRATO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(extrato)$");
     private static final Pattern TRANSACAO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(transacoes)$");
@@ -119,6 +124,7 @@ public class RinhaServlet extends HttpServlet {
 
     private Cliente loadExtrato(Integer id) throws SQLException {
         var cliente = loadCliente(id);
+        if (cliente == null) return null;
         var extrato = loadTransacoes(id);
         cliente.transacoes = extrato;
         return cliente;
@@ -130,6 +136,10 @@ public class RinhaServlet extends HttpServlet {
         if(extrato == null){
             Log.debugf("Cliente [%s] cache MISS, loading from database",id);
             extrato = loadExtrato(id);
+            if (extrato == null){
+                Log.infof("Failed to load extrato for cliente [%s]",id);
+                return null;
+            }
             cache.put(id, extrato);
         }else {
             Log.debugf("Cliente [%s] cache HIT, loading from database",id);
@@ -141,10 +151,22 @@ public class RinhaServlet extends HttpServlet {
     private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
         try {
             var extrato = getExtrato(id);
-            Log.info("Loading database extrato");
+             // Log.info("Loading database extrato");
             if (resp == null)
                 return;
-            var result = objectMapper.writeValueAsString(extrato);
+            if (extrato == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cliente nao encontrado");
+                return;
+            }
+            var map = Map.of(
+                "saldo", Map.of(
+                    "total", extrato.saldo,
+                    "data_extrato", LocalDateTime.now().toString(),
+                    "limite", extrato.limite
+                ),
+                "ultimas_transacoes", extrato.transacoes
+            );
+            var result = objectMapper.writeValueAsString(map);
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
             resp.getWriter().write(result);
