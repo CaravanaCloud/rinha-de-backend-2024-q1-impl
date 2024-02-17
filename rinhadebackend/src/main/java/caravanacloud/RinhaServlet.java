@@ -33,17 +33,19 @@ public class RinhaServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {        
         super.init();
-        Log.info("Warmimg....");
+        Log.info("Warming up....");
         try {
-            processExtrato(1,null);
-            postTransacao(1, Map.of(
-                "valor", "0",
-                "tipo", "c",
-                "descricao", "warmup"
-            ), 
-            null);
+            for (int i = 0; i < 6; i++){
+                processExtrato(1,null);
+                postTransacao(1, Map.of(
+                    "valor", "0",
+                    "tipo", "c",
+                    "descricao", "warmup"
+                ), 
+                null);
+            }
         }catch(Exception e){
-            Log.errorf(e, "Warmuyp failed");
+            Log.errorf(e, "Warmup failed");
         }
     }
     
@@ -51,24 +53,12 @@ public class RinhaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        if (pathInfo == null) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Resource not found");
-            return;
-        }
-
-        // Use the static pattern to match the path info
         var matcher = EXTRATO_PATTERN.matcher(pathInfo);
-
         if (matcher.matches()) {
             var id = Integer.valueOf(matcher.group(1));
-            var action = matcher.group(2);
-
-            if ("extrato".equals(action)) {
-                processExtrato(id, resp);
-                return;
-            }
+            processExtrato(id, resp);
+            return;
         }
-        // If the request does not match the expected format
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL format or resource not found");
     }
 
@@ -106,16 +96,7 @@ public class RinhaServlet extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        if (pathInfo == null) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Resource not found");
-            return;
-        }
-
-        // Use the static pattern to match the path info
         var matcher = TRANSACAO_PATTERN.matcher(pathInfo);
-
-        
-        
         Map<String, Object> t;
         try (BufferedReader reader = req.getReader()) {
             t = objectMapper.readValue(reader, Map.class);
@@ -123,17 +104,11 @@ public class RinhaServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request body");
             return;
         }
-
         if (matcher.matches()) {
             var id = Integer.valueOf(matcher.group(1));
-            var action = matcher.group(2);
-
-            if ("transacoes".equals(action)) {
-                postTransacao(id, t, resp);
-                return;
-            }
+            postTransacao(id, t, resp);
+            return;
         }
-
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL format or resource not found");
     }
 
@@ -144,7 +119,7 @@ public class RinhaServlet extends HttpServlet {
             resp.sendError(422, "Valor invalido");
             return;
         }
-        var valor = valorNumber.intValue();
+        var valor = (Integer) valorNumber;
 
         var tipo = (String) t.get("tipo");
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
@@ -157,7 +132,6 @@ public class RinhaServlet extends HttpServlet {
             resp.sendError(422, "Descricao invalida");
             return;
         }
-
 
         try (var conn = ds.getConnection();
              var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
