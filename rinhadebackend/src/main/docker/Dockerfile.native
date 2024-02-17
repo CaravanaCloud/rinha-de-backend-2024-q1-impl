@@ -11,8 +11,9 @@ FROM fedora:39 as build
 # Root level
 USER root
 ENV PATH="/usr/bin:${PATH}"
+# RUN bash -c "dnf install -y zip unzip gcc glibc-devel zlib-devel libstdc++-static"
+# RUN bash -c "dnf upgrade"
 RUN bash -c "dnf install -y zip unzip gcc glibc-devel zlib-devel libstdc++-static"
-
 
 # Docker
 # RUN bash -c "dnf -y install dnf-plugins-core"
