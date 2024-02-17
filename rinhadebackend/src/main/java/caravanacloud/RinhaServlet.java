@@ -249,6 +249,10 @@ public class RinhaServlet extends HttpServlet {
         }
         
         if ("d".equals(tipo)) {
+            if (cliente.saldo - valor < -cliente.limite) {
+                resp.sendError(422, "Limite indisponivel");
+                return;
+            }
             cliente.saldo -= valor;
         } else {
             cliente.saldo += valor;
