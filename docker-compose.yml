@@ -4,7 +4,7 @@ services:
   api01:
     networks:
       - rinha-net
-    image: caravanacloud/rinhadebackend-native:latest
+    image: caravanacloud/rinhadebackend-cached:latest
     hostname: api01
     container_name: api01
     environment:
@@ -50,7 +50,7 @@ services:
   api02:
     networks:
       - rinha-net
-    image: caravanacloud/rinhadebackend-native:latest
+    image: caravanacloud/rinhadebackend-cached:latest
     hostname: api02
     container_name: api02
     environment:
