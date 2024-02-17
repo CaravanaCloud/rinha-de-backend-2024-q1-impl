@@ -1,8 +1,15 @@
 package caravanacloud;
 
-public class Transacao {
+import java.io.Serializable;
+
+import org.infinispan.protostream.annotations.ProtoField;
+
+public class Transacao implements Serializable{
+    @ProtoField
     public int valor;
+    @ProtoField
     public String tipo;
+    @ProtoField
     public String descricao;
 
     public static Transacao of(int valor2, String tipo2, String descricao2) {

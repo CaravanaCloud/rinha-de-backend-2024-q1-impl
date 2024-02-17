@@ -164,9 +164,7 @@ public class RinhaServlet extends HttpServlet {
         }
     }
 
-    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
-    // "tipo": "c", "descricao": "Deposito"}'
-    // http:///localhost:9999/clientes/1/transacoes
+    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
@@ -182,6 +180,7 @@ public class RinhaServlet extends HttpServlet {
         try (BufferedReader reader = req.getReader()) {
             t = objectMapper.readValue(reader, Map.class);
         } catch (Exception e) {
+            e.printStackTrace();
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request body");
             return;
         }
@@ -220,12 +219,45 @@ public class RinhaServlet extends HttpServlet {
             return;
         }
 
-        try (var conn = ds.getConnection();
+        var cliente = cache.get(id);
+
+        if (cliente == null) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cliente nao encontrado");
+            return;
+        }
+        
+        if ("d".equals(tipo)) {
+            cliente.saldo -= valor;
+        } else {
+            cliente.saldo += valor;
+        }
+        
+        Integer saldo = cliente.saldo;
+        Integer limite = cliente.limite;
+
+        cliente.transacoes.addFirst(Transacao.of(valor, tipo, descricao));
+        if (cliente.transacoes.size() > 10) {
+            cliente.transacoes.removeLast();
+        }
+        cache.put(id, cliente);
+
+        var body = Map.of("limite", limite, "saldo", saldo);
+        //Log.info(body);
+        if (resp == null)
+            return;
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+        var output = objectMapper.writeValueAsString(body);
+        resp.getWriter().write(output);
+    }
+
+    private void callTransacao(Integer id, Map<String, Object> t, HttpServletResponse resp) throws IOException {
+    try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
-            stmt.setInt(1, id);
-            stmt.setInt(2, valor);
-            stmt.setString(3, tipo);
-            stmt.setString(4, descricao);
+            //stmt.setInt(1, id);
+            //stmt.setInt(2, valor);
+            //stmt.setString(3, tipo);
+            //stmt.setString(4, descricao);
             stmt.execute();
 
             try (var rs = stmt.getResultSet()) {
@@ -250,7 +282,7 @@ public class RinhaServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
         }
     }
-
+    
     private void handleSQLException(SQLException e, HttpServletResponse resp) throws IOException {
         var msg = e.getMessage();
         if (msg.contains("LIMITE_INDISPONIVEL")) {
