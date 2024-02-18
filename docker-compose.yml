@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-jvm:latest
+    image: caravanacloud/rinhadebackend-native:latest
     hostname: api01
     container_name: api01
     environment:
@@ -42,7 +42,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-jvm:latest
+    image: caravanacloud/rinhadebackend-native:latest
     hostname: api02
     container_name: api02
     environment:
@@ -81,7 +81,7 @@ services:
 
   api03:
     network_mode: host
-    image: caravanacloud/rinhadebackend-jvm:latest
+    image: caravanacloud/rinhadebackend-native:latest
     hostname: api03
     container_name: api03
     environment:
