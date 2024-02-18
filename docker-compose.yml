@@ -165,9 +165,9 @@ services:
           cpus: "0.60"
           memory: "300MB"
 
-  curl:
-    image: appropriate/curl
-    command: /bin/sh -c "sleep 30 && curl http://127.0.0.1:9999/clientes/1/extrato"
+#  curl:
+#    image: appropriate/curl
+#    command: /bin/sh -c "sleep 30 && curl http://127.0.0.1:9999/clientes/1/extrato"
 
 
 
