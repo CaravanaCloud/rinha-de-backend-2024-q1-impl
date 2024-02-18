@@ -22,7 +22,7 @@ import jakarta.transaction.Transactional;
 import static jakarta.servlet.http.HttpServletResponse.*;
 
 
-@WebServlet("/*")
+@WebServlet(value="/*", loadOnStartup = 1)
 @Transactional
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
