@@ -67,7 +67,7 @@ USER root
 #$USERNAME
 
 # Copy binary
-RUN mkdir -p "/opt/quarkus-app"
+RUN mkdir -p "/opt/quarkus-app/target/"
 WORKDIR "/opt/quarkus-app"
 
 ARG CP_FROM="/opt/quarkus-app/target/*-runner"
