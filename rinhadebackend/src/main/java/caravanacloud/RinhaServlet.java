@@ -17,10 +17,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+
 import static jakarta.servlet.http.HttpServletResponse.*;
 
 
 @WebServlet("/*")
+@Transactional
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY =  "select * from proc_transacao(?, ?, ?, ?)";
@@ -52,7 +55,8 @@ public class RinhaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var id = pathInfo.substring(10,11);
+        //var id = pathInfo.substring(10,11);
+        var id = pathInfo.split("/")[2];
         // Log.info(pathInfo + " => " + id);
         processExtrato(Integer.valueOf(id), resp);
     }
@@ -78,29 +82,34 @@ public class RinhaServlet extends HttpServlet {
                 sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
             } else {
                 e.printStackTrace();
-                sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
+                sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao"+e.getMessage());
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
+            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao: "+e.getMessage());
         }
     }
 
     private void sendError(HttpServletResponse resp, int sc, String msg) throws IOException{
-        sendError(resp, sc, msg);
+        if (sc == 500) Log.warn(msg);
+        if (resp != null) 
+            resp.sendError(sc, msg);
+        else
+            Log.warnf("[%s] %s", sc, msg);
     }
 
     // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var id = pathInfo.substring(10,11);
+        // var id = pathInfo.substring(10,11);
+        var id = pathInfo.split("/")[2];
         //Log.info(pathInfo + " => " + id);
         JsonNode json;
         try (BufferedReader reader = req.getReader()) {
             json = objectMapper.readTree(reader);
         } catch (Exception e) {
-            sendError(resp, SC_BAD_REQUEST, "Invalid request body");
+            sendError(resp, SC_BAD_REQUEST, "Invalid request body "+e.getMessage());
             return;
         }
         postTransacao(Integer.valueOf(id), json, resp);
@@ -150,13 +159,13 @@ public class RinhaServlet extends HttpServlet {
                     var output = objectMapper.writeValueAsString(body);
                     resp.getWriter().write(output);
                 } else {
-                    sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
+                    sendError(resp, SC_INTERNAL_SERVER_ERROR, "No next result from transacao query");
                 }
             }
         } catch (SQLException e) {
             handleSQLException(e, resp);
         } catch (Exception e) {
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
+            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao "+e.getMessage());
         }
     }
 
@@ -167,7 +176,7 @@ public class RinhaServlet extends HttpServlet {
         } else if (msg.contains("fk_clientes_transacoes_id")) {
             sendError(resp, SC_NOT_FOUND, "Erro: Cliente inexistente");
         } else {
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
+            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao manipular a transacao: "+e.getMessage());
         }
     }
 }
