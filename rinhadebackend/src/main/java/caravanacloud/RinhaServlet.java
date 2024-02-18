@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -33,9 +32,9 @@ public class RinhaServlet extends HttpServlet {
         super.init();
         Log.info("Warming up....");
         try {
-            for (int i = 0; i < 6; i++){
-                processExtrato(1,null);
-                postTransacao(1, Map.of(
+            for (int i = 0; i <= 5; i++){
+                processExtrato(i,null);
+                postTransacao(i, Map.of(
                     "valor", "0",
                     "tipo", "c",
                     "descricao", "warmup"
@@ -51,7 +50,9 @@ public class RinhaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var id = pathInfo.substring(12,13);
+        var id = pathInfo.substring(10,11);
+        //Log.info(pathInfo);
+        //Log.info(id);
         processExtrato(Integer.valueOf(id), resp);
     }
 
@@ -89,7 +90,7 @@ public class RinhaServlet extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var id = pathInfo.substring(12,13);
+        var id = pathInfo.substring(10,11);
         Map<String, Object> t;
         try (BufferedReader reader = req.getReader()) {
             t = objectMapper.readValue(reader, Map.class);
@@ -105,20 +106,20 @@ public class RinhaServlet extends HttpServlet {
         // Validate and process the transaction as in the original resource
         var valorNumber = (Object) t.get("valor");
         if (valorNumber == null || !( valorNumber instanceof Integer)) {
-            resp.sendError(422, "Valor invalido");
+            if(resp != null) resp.sendError(422, "Valor invalido");
             return;
         }
         var valor = (Integer) valorNumber;
 
         var tipo = (String) t.get("tipo");
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
-            resp.sendError(422, "Tipo invalido");
+            if(resp != null) resp.sendError(422, "Tipo invalido");
             return;
         }
 
         var descricao = (String) t.get("descricao");
         if (descricao == null || descricao.isEmpty() || descricao.length() > 10) {
-            resp.sendError(422, "Descricao invalida");
+            if(resp != null) resp.sendError(422, "Descricao invalida");
             return;
         }
 
@@ -137,6 +138,7 @@ public class RinhaServlet extends HttpServlet {
                     Integer limite = rs.getInt("limite");
 
                     var body = Map.of("limite", limite, "saldo", saldo);
+                    if(resp == null) return;
                     resp.setContentType("application/json");
                     resp.setCharacterEncoding("UTF-8");
                     var output = objectMapper.writeValueAsString(body);
