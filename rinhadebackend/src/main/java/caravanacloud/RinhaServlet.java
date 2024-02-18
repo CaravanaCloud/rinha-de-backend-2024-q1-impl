@@ -118,13 +118,19 @@ public class RinhaServlet extends HttpServlet {
 
     private void postTransacao(Integer id, JsonNode t, HttpServletResponse resp) throws IOException {
         // Validate and process the transaction as in the original resource
-        var valorNumber = (Object) t.get("valor").asInt();
-        if (valorNumber == null || !( valorNumber instanceof Integer)) {
+        var valorNumber =  t.get("valor").asText();
+        if (valorNumber == null || valorNumber.contains(".") ) {
             if(resp != null) sendError(resp, 422, "Valor invalido");
             return;
         }
-        var valor = (Integer) valorNumber;
 
+        Integer valor = null;
+        try {
+            valor = Integer.parseInt((String) valorNumber);
+        } catch (NumberFormatException e) {
+            if(resp != null) sendError(resp, 422, "Valor invalido");
+            return;
+        }
 
         var tipo = (String) t.get("tipo").asText();
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
