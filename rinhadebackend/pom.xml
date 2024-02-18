@@ -116,7 +116,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--gc=G1,-O3,--initialize-at-run-time,--install-exit-handlers</quarkus.native.additional-build-args> 
+        <quarkus.native.additional-build-args>--verbose,--gc=G1,-O3,--install-exit-handlers</quarkus.native.additional-build-args> 
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>

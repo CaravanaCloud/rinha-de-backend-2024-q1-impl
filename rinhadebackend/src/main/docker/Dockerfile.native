@@ -54,7 +54,8 @@ RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
 ### RUNTIME STAGE ###
 # TODO FROM scratch
 # TODO FROM ghcr.io/graalvm/native-image-community:21
-FROM fedora:39
+# FROM fedora:39
+FROM quay.io/quarkus/quarkus-micro-image:2.0
 
 # Create user
 ARG USERNAME=container-user
