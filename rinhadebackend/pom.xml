@@ -129,7 +129,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--gc=G1,-H:G1HeapRegionSize=4m,-O3,--initialize-at-build-time,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>--gc=G1,-O3,--initialize-at-build-time,--install-exit-handlers</quarkus.native.additional-build-args> 
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
