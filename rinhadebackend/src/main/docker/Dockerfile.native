@@ -61,16 +61,17 @@ FROM quay.io/quarkus/quarkus-micro-image:2.0
 ARG USERNAME=container-user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-RUN groupadd --gid $USER_GID $USERNAME 
-RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
-USER $USERNAME
+#RUN groupadd --gid $USER_GID $USERNAME 
+#RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
+USER root  
+#$USERNAME
 
 # Copy binary
-RUN mkdir -p "/home/$USERNAME/quarkus-app"
-WORKDIR "/home/$USERNAME/quarkus-app"
+RUN mkdir -p "/opt/quarkus-app"
+WORKDIR "/opt/quarkus-app"
 
-ARG CP_FROM="/home/container-user/quarkus-app/target/*-runner"
-ARG CP_TO="/home/container-user/quarkus-app/"
+ARG CP_FROM="/opt/quarkus-app/target/*-runner"
+ARG CP_TO="/opt/quarkus-app/"
 RUN mkdir -p "$CP_TO"
 COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
 

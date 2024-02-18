@@ -34,17 +34,23 @@ public class RinhaServlet extends HttpServlet {
     public void init() throws ServletException {        
         super.init();
         Log.info("Warmimg....");
-        try {
-            processExtrato(1,null);
-            postTransacao(1, Map.of(
-                "valor", "0",
-                "tipo", "c",
-                "descricao", "warmup"
-            ), 
-            null);
-        }catch(Exception e){
-            Log.errorf(e, "Warmuyp failed");
-        }
+        var ready = false;
+        do {
+            try {
+                processExtrato(1,null);
+                postTransacao(1, Map.of(
+                    "valor", "0",
+                    "tipo", "c",
+                    "descricao", "warmup"
+                ), 
+                null);
+                ready = true;
+            }catch(Exception e){
+                Log.errorf(e, "Warmuyp failed, waiting for db...");
+                ready = false;
+                Thread.sleep(1000);
+            }
+        }while(!ready);
     }
     
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
