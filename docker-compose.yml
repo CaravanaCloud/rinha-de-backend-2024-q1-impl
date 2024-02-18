@@ -46,7 +46,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "1200MB"
+          memory: "120MB"
   api02:
     networks:
       - rinha-net
@@ -94,7 +94,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "1200MB"
+          memory: "120MB"
 
 
   nginx:
