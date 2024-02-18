@@ -97,7 +97,6 @@ public class RinhaServlet extends HttpServlet {
         else
             Log.warnf("[%s] %s", sc, msg);
     }
-
     // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -139,7 +138,7 @@ public class RinhaServlet extends HttpServlet {
         }
 
         var descricao = (String) t.get("descricao").asText();
-        if (descricao == null || descricao.isEmpty() || descricao.length() > 10) {
+        if (descricao == null || descricao.isEmpty() || descricao.length() > 10 || "null".equals(descricao)) {
             if(resp != null) sendError(resp, 422, "Descricao invalida");
             return;
         }
