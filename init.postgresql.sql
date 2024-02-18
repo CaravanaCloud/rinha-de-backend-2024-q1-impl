@@ -42,7 +42,7 @@ BEGIN
     RETURNING saldo, limite INTO v_saldo, v_limite;
 
     IF (v_saldo) < (-1 * v_limite) THEN
-        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+        RAISE 'LIMITE_INDISPONIVEL [%, %]', v_saldo, v_limite;
     ELSE
         result := (v_saldo, v_limite)::transacao_result;
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
