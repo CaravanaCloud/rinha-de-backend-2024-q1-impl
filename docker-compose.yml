@@ -1,11 +1,10 @@
 version: "3.9"
+name: caravanacloud
 
 services:
   api01:
-    networks:
-      - rinha-net
+    network_mode: host
     image: caravanacloud/rinhadebackend-native:latest
-    hostname: api01
     container_name: api01
     environment:
       - DB_HOSTNAME=db
@@ -48,10 +47,8 @@ services:
           cpus: "0.25"
           memory: "90MB"
   api02:
-    networks:
-      - rinha-net
+    network_mode: host
     image: caravanacloud/rinhadebackend-native:latest
-    hostname: api02
     container_name: api02
     environment:
       - DB_HOSTNAME=db
@@ -98,10 +95,8 @@ services:
 
 
   nginx:
-    hostname: lb
     container_name: lb
-    networks:
-      - rinha-net 
+    network_mode: host 
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -127,10 +122,8 @@ services:
           memory: "40MB"
     
   db:
-    networks:
-      - rinha-net
+    network_mode: host
     image: postgres:latest
-    hostname: db
     container_name: db
     environment:
       - POSTGRES_PASSWORD=123
