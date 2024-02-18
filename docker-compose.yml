@@ -178,9 +178,21 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.20"
-          memory: "40MB"
-    
+          cpus: "0.19"
+          memory: "32MB"
+  warmupa:
+    image: appropriate/curl
+    command: >
+      while true; do 
+        curl -s http://127.0.0.1:9999/clientes/1/extrato; 
+        curl -s -X POST -H "Content-Type: application/json" -d '{\"valor\": 0, \"tipo\": \"c\", \"descricao\": \"Deposito\"}' http://localhost:9999/clientes/1/transacoes; 
+        sleep 0.5; 
+      done
+    deploy:
+      resources: 
+        limits:
+          cpus: "0.01"
+          memory: "8MB"   
   db:
     network_mode: host
     image: postgres:latest
@@ -204,9 +216,7 @@ services:
           cpus: "0.50"
           memory: "270MB"
 
-#  curl:
-#    image: appropriate/curl
-#    command: /bin/sh -c "sleep 30 && curl http://127.0.0.1:9999/clientes/1/extrato"
+
 
 
 

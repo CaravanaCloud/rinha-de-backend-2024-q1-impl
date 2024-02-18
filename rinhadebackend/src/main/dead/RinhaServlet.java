@@ -108,7 +108,7 @@ public class RinhaServlet extends HttpServlet {
         }
     }
 
-    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
+    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 0, "tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
