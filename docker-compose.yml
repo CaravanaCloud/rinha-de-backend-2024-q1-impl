@@ -2,8 +2,9 @@ version: "3.9"
 
 services:
   api01:
-    networks:
-      - rinha-net
+    #networks:
+    #  - rinha-net
+    network_mode: host
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api01
     container_name: api01
@@ -48,8 +49,9 @@ services:
           cpus: "0.25"
           memory: "90MB"
   api02:
-    networks:
-      - rinha-net
+    #networks:
+    #  - rinha-net
+    network_mode: host
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api02
     container_name: api02
@@ -98,10 +100,11 @@ services:
 
 
   nginx:
+    #networks:
+    #  - rinha-net 
+    network_mode: host
     hostname: lb
     container_name: lb
-    networks:
-      - rinha-net 
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -127,8 +130,9 @@ services:
           memory: "40MB"
     
   db:
-    networks:
-      - rinha-net
+    #networks:
+    #  - rinha-net
+    network_mode: host
     image: postgres:latest
     hostname: db
     container_name: db
@@ -157,8 +161,8 @@ services:
       start_period: 5s
 
 
-networks:
-  rinha-net:
-    driver: bridge
-    driver_opts:
-      com.docker.network.driver.mtu: 9000
+#networks:
+#  rinha-net:
+#    driver: bridge
+#    driver_opts:
+#      com.docker.network.driver.mtu: 9000
