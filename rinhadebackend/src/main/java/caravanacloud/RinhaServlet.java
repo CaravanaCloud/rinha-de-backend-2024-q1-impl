@@ -52,7 +52,12 @@ public class RinhaServlet extends HttpServlet {
             } catch (Exception e) {
                 Log.errorf(e, "Warmuyp failed, waiting for db...");
                 ready = false;
-                Thread.sleep(1000);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
             }
         } while (!ready);
     }
