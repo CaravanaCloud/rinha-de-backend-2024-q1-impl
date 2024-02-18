@@ -70,11 +70,11 @@ USER root
 RUN mkdir -p "/opt/quarkus-app/target/"
 WORKDIR "/opt/quarkus-app"
 
-ARG CP_FROM="/opt/quarkus-app/target/*-runner"
+ARG CP_FROM="/home/container-user/quarkus-app/target/*-runner"
 ARG CP_TO="/opt/quarkus-app/"
 RUN mkdir -p "$CP_TO"
-COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
+COPY --from=build $CP_FROM $CP_TO
 
 # Container Settings
 EXPOSE 9990
-ENTRYPOINT /home/container-user/quarkus-app/rinhadebackend-0.0.1-runner
+ENTRYPOINT /opt/quarkus-app/rinhadebackend-0.0.1-runner
