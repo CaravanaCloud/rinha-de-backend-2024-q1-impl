@@ -178,7 +178,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
+          cpus: "0.20"
           memory: "40MB"
     
   db:
@@ -201,7 +201,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.60"
+          cpus: "0.50"
           memory: "270MB"
 
 #  curl:
