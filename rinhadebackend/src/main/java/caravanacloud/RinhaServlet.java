@@ -20,8 +20,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/*")
 public class RinhaServlet extends HttpServlet {
-    private static final Pattern EXTRATO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(extrato)$");
-    private static final Pattern TRANSACAO_PATTERN = Pattern.compile("^/clientes/(\\d+)/(transacoes)$"); 
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY =  "select * from proc_transacao(?, ?, ?, ?)";
 
@@ -53,13 +51,8 @@ public class RinhaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var matcher = EXTRATO_PATTERN.matcher(pathInfo);
-        if (matcher.matches()) {
-            var id = Integer.valueOf(matcher.group(1));
-            processExtrato(id, resp);
-            return;
-        }
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL format or resource not found");
+        var id = pathInfo.substring(12,13);
+        processExtrato(Integer.valueOf(id), resp);
     }
 
     private void processExtrato(Integer id, HttpServletResponse resp) throws IOException{
@@ -96,7 +89,7 @@ public class RinhaServlet extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
-        var matcher = TRANSACAO_PATTERN.matcher(pathInfo);
+        var id = pathInfo.substring(12,13);
         Map<String, Object> t;
         try (BufferedReader reader = req.getReader()) {
             t = objectMapper.readValue(reader, Map.class);
@@ -104,18 +97,14 @@ public class RinhaServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request body");
             return;
         }
-        if (matcher.matches()) {
-            var id = Integer.valueOf(matcher.group(1));
-            postTransacao(id, t, resp);
-            return;
-        }
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL format or resource not found");
+        postTransacao(Integer.valueOf(id), t, resp);
+        return;
     }
 
     private void postTransacao(Integer id, Map<String, Object> t, HttpServletResponse resp) throws IOException {
         // Validate and process the transaction as in the original resource
-        var valorNumber = (Number) t.get("valor");
-        if (valorNumber == null || !Integer.class.equals(valorNumber.getClass())) {
+        var valorNumber = (Object) t.get("valor");
+        if (valorNumber == null || !( valorNumber instanceof Integer)) {
             resp.sendError(422, "Valor invalido");
             return;
         }
