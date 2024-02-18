@@ -37,7 +37,7 @@ public class RinhaServlet extends HttpServlet {
         super.init();
         Log.info("Warming up....");
         try {
-            for (int i = 0; i <= 5; i++){
+            for (int i = 1; i <= 5; i++){
                 processExtrato(i,null);
                 var json = objectMapper.createObjectNode()
                     .put("valor", 0)
