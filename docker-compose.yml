@@ -187,7 +187,7 @@ services:
     image: appropriate/curl
     command: >
       /bin/sh -c "while true; do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-      curl -v -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"c\", 
+      curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"c\", 
       \"descricao\": \"Deposito\"}' http://localhost:9999/clientes/1/transacoes; sleep 1; done"
     deploy:
       resources: 
