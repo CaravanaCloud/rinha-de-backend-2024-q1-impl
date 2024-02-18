@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.logging.Log;
@@ -34,11 +35,11 @@ public class RinhaServlet extends HttpServlet {
         try {
             for (int i = 0; i <= 5; i++){
                 processExtrato(i,null);
-                postTransacao(i, Map.of(
-                    "valor", "0",
-                    "tipo", "c",
-                    "descricao", "warmup"
-                ), 
+                var json = objectMapper.createObjectNode()
+                    .put("valor", 0)
+                    .put("tipo", "c")
+                    .put("descricao", "warmup");
+                postTransacao(i, json, 
                 null);
             }
         }catch(Exception e){
@@ -51,8 +52,7 @@ public class RinhaServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
         var id = pathInfo.substring(10,11);
-        //Log.info(pathInfo);
-        //Log.info(id);
+        // Log.info(pathInfo + " => " + id);
         processExtrato(Integer.valueOf(id), resp);
     }
 
@@ -75,14 +75,14 @@ public class RinhaServlet extends HttpServlet {
         } catch (SQLException e) {
             var msg = e.getMessage();
             if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cliente nao encontrado");
+                if (resp != null) resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Cliente nao encontrado");
             } else {
                 e.printStackTrace();
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
+                if (resp != null) resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
+            if (resp != null) resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao");
         }
     }
 
@@ -91,33 +91,35 @@ public class RinhaServlet extends HttpServlet {
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var pathInfo = req.getPathInfo();
         var id = pathInfo.substring(10,11);
-        Map<String, Object> t;
+        //Log.info(pathInfo + " => " + id);
+        JsonNode json;
         try (BufferedReader reader = req.getReader()) {
-            t = objectMapper.readValue(reader, Map.class);
+            json = objectMapper.readTree(reader);
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request body");
             return;
         }
-        postTransacao(Integer.valueOf(id), t, resp);
+        postTransacao(Integer.valueOf(id), json, resp);
         return;
     }
 
-    private void postTransacao(Integer id, Map<String, Object> t, HttpServletResponse resp) throws IOException {
+    private void postTransacao(Integer id, JsonNode t, HttpServletResponse resp) throws IOException {
         // Validate and process the transaction as in the original resource
-        var valorNumber = (Object) t.get("valor");
+        var valorNumber = (Object) t.get("valor").asInt();
         if (valorNumber == null || !( valorNumber instanceof Integer)) {
             if(resp != null) resp.sendError(422, "Valor invalido");
             return;
         }
         var valor = (Integer) valorNumber;
 
-        var tipo = (String) t.get("tipo");
+
+        var tipo = (String) t.get("tipo").asText();
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
             if(resp != null) resp.sendError(422, "Tipo invalido");
             return;
         }
 
-        var descricao = (String) t.get("descricao");
+        var descricao = (String) t.get("descricao").asText();
         if (descricao == null || descricao.isEmpty() || descricao.length() > 10) {
             if(resp != null) resp.sendError(422, "Descricao invalida");
             return;
