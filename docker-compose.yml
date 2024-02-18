@@ -6,6 +6,9 @@ services:
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api01
     container_name: api01
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       - QUARKUS_HTTP_PORT=9001
       - QUARKUS_BANNER_ENABLED=false
@@ -45,6 +48,9 @@ services:
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api02
     container_name: api02
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       - QUARKUS_HTTP_PORT=9002
       - QUARKUS_BANNER_ENABLED=false
@@ -84,6 +90,9 @@ services:
     image: caravanacloud/rinhadebackend-native:latest
     hostname: api03
     container_name: api03
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       - QUARKUS_HTTP_PORT=9003
       - QUARKUS_BANNER_ENABLED=false
@@ -125,6 +134,13 @@ services:
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api01:
+        condition: service_healthy
+      api02:
+        condition: service_healthy
+      api03:
+        condition: service_healthy
     ports:
       - "9999:9999"
     ulimits:
