@@ -159,11 +159,11 @@ public class RinhaServlet extends HttpServlet {
     private void handleSQLException(SQLException e, HttpServletResponse resp) throws IOException {
         var msg = e.getMessage();
         if (msg.contains("LIMITE_INDISPONIVEL")) {
-            resp.sendError(422, "Erro: Limite indisponivel");
+            if (resp != null) resp.sendError(422, "Erro: Limite indisponivel");
         } else if (msg.contains("fk_clientes_transacoes_id")) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Erro: Cliente inexistente");
+            if (resp != null) resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Erro: Cliente inexistente");
         } else {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
+            if (resp != null) resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao");
         }
     }
 }
