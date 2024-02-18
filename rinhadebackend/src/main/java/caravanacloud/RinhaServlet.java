@@ -1,5 +1,9 @@
 package caravanacloud;
 
+import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -11,19 +15,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.StartupEvent;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
-
-import static jakarta.servlet.http.HttpServletResponse.*;
 
 
-@WebServlet(value="/*", loadOnStartup = 1)
-@Transactional
+@WebServlet(value="/*")
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY =  "select * from proc_transacao(?, ?, ?, ?)";
@@ -32,9 +34,7 @@ public class RinhaServlet extends HttpServlet {
     @Inject
     DataSource ds;
 
-    @Override
-    public void init() throws ServletException {        
-        super.init();
+    public void onStartup(@Observes StartupEvent event) {
         Log.info("Warming up....");
         try {
             for (int i = 1; i <= 5; i++){
@@ -49,6 +49,7 @@ public class RinhaServlet extends HttpServlet {
         }catch(Exception e){
             Log.errorf(e, "Warmup failed");
         }
+        Log.info("RinhaServlet started");
     }
     
     // curl -v -X GET http://localhost:9999/clientes/1/extrato

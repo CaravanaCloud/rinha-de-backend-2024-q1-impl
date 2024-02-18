@@ -26,13 +26,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-bom</artifactId>
-        <version>${version.infinispan}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -56,12 +49,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jackson</artifactId>
     </dependency>
-    <dependency>
-       <groupId>org.infinispan</groupId>
-       <artifactId>infinispan-core-jakarta</artifactId>
-    </dependency>
-
-
   </dependencies>
   <build>
     <plugins>
@@ -129,7 +116,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--gc=G1,-O3,--initialize-at-build-time,--install-exit-handlers</quarkus.native.additional-build-args> 
+        <quarkus.native.additional-build-args>--gc=G1,-O3,--initialize-at-run-time,--install-exit-handlers</quarkus.native.additional-build-args> 
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
