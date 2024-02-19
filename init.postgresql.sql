@@ -84,6 +84,9 @@ BEGIN
         diff := p_valor;
     END IF;
 
+    EXECUTE format('LOCK TABLE %I IN EXCLUSIVE MODE', tabela_transacao);
+
+
     -- Obtendo o saldo atual da última transação
     EXECUTE format('SELECT saldo FROM %I ORDER BY id DESC LIMIT 1', tabela_transacao) INTO v_saldo_atual;
     IF NOT FOUND THEN

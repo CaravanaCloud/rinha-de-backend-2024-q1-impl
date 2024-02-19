@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -30,6 +31,7 @@ public class RinhaServlet extends HttpServlet {
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY =  "SELECT pg_prewarm('transacoes_1');SELECT pg_prewarm('transacoes_2');SELECT pg_prewarm('transacoes_3');SELECT pg_prewarm('transacoes_4');SELECT pg_prewarm('transacoes_5');";
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Set<String> validIds = Set.of("1", "2", "3", "4", "5");
 
     @Inject
     DataSource ds;
@@ -77,6 +79,10 @@ public class RinhaServlet extends HttpServlet {
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
+        if  (! validIds.contains(id)) {
+            sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
+            return;
+        }
         // Log.info(pathInfo + " => " + id);
         processExtrato(Integer.valueOf(id), resp);
     }
@@ -128,6 +134,10 @@ public class RinhaServlet extends HttpServlet {
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
+        if  (! validIds.contains(id)) {
+            sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
+            return;
+        }
         // Log.info(pathInfo + " => " + id);
         JsonNode json;
         try (BufferedReader reader = req.getReader()) {
