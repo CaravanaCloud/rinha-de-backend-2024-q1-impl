@@ -135,7 +135,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.01"
+          cpus: "0.2"
           memory: "8MB"
 
   db:
