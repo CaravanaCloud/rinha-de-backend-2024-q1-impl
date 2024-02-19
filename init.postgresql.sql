@@ -1,15 +1,27 @@
+CREATE UNLOGGED TABLE clientes (
+	id SERIAL PRIMARY KEY,
+	nome VARCHAR(255) NOT NULL,
+	limite INTEGER NOT NULL,
+	saldo INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE UNLOGGED TABLE transacoes (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao VARCHAR(255) NOT NULL,
-	realizada_em TIMESTAMP NOT NULL DEFAULT NOW()
+	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+	CONSTRAINT fk_clientes_transacoes_id
+		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
-CREATE EXTENSION IF NOT EXISTS pg_prewarm;
-SELECT pg_prewarm('transacoes');
-
+INSERT INTO clientes (nome, limite) VALUES
+	('o barato sai caro', 1000 * 100),
+	('zan corp ltda', 800 * 100),
+	('les cruders', 10000 * 100),
+	('padaria joia de cocaia', 100000 * 100),
+	('kid mais', 5000 * 100);
 CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
 CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
@@ -25,7 +37,10 @@ BEGIN
     ELSE
         diff := p_valor;
     END IF;
-    -- rplace with select
+
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
+
+
     UPDATE clientes 
         SET saldo = saldo + diff 
         WHERE id = p_cliente_id

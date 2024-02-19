@@ -1,4 +1,4 @@
-package caravanacloud;
+package caravanacloud.cached;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -37,39 +37,38 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-// curl -v -X GET http://localhost:9999/clientes/1/extrato
+// curl -v -X GET http://localhost:9999/cached/clientes/1/extrato
 
 // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
 // "tipo": "c", "descricao": "Deposito"}'
 // http:///localhost:9999/clientes/1/transacoes
 
-@WebServlet(value = "/*")
+@WebServlet(value = "/cached/*")
 public class RinhaServlet extends HttpServlet {
-    private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
-    private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY = "CREATE EXTENSION IF NOT EXISTS pg_prewarm; SELECT pg_prewarm('transacoes');";
-
+    private static final String EXTRATO_QUERY = "SELECT json_agg(t) FROM (SELECT * FROM transacoes WHERE id = ?) t";
+    private static final String TRANSACAO_QUERY = "INSERT INTO transacoes (cliente_id, valor, tipo, descricao) VALUES (?, ?, ?, ?)";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public static Map<Integer, Cliente> cache;
-    public static final Integer shard = envInt("RINHA_SHARD", 0);
+    public static final int shard = envInt("RINHA_SHARD", 1);
 
     @ConfigProperty(name = "quarkus.profile")
     String profile;
 
     static {
         cache = Map.of(
-                1, Cliente.of(0, 1, "o barato sai caro", 0, 1000 * 100),
-                2, Cliente.of(1, 2, "zan corp ltda", 0, 800 * 100),
-                3, Cliente.of(0, 3, "les cruders", 0, 10000 * 100),
-                4, Cliente.of(1, 4, "padaria joia de cocaia", 0, 100000 * 100),
-                5, Cliente.of(0, 5, "kid mais", 0, 5000 * 100));
+                1, Cliente.of(1, 1, "o barato sai caro", 0, 1000 * 100),
+                2, Cliente.of(0, 2, "zan corp ltda", 0, 800 * 100),
+                3, Cliente.of(1, 3, "les cruders", 0, 10000 * 100),
+                4, Cliente.of(0, 4, "padaria joia de cocaia", 0, 100000 * 100),
+                5, Cliente.of(1, 5, "kid mais", 0, 5000 * 100));
     }
 
     @Inject
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
-        Log.info("Warming up [" + profile + "]....");
+        Log.infof("Warming up profile[%s] shard[%s]", profile, shard);
         var ready = false;
         // create json node
         var txx = objectMapper.createObjectNode()
@@ -80,8 +79,7 @@ public class RinhaServlet extends HttpServlet {
             try {
                 warmup();
                 processExtrato(1, null);
-                postTransacao(1, txx,
-                        null);
+                // postTransacao(1, txx, null);
                 ready = true;
             } catch (Exception e) {
                 Log.errorf(e, "Warmup failed [" + profile + "], waiting for db...");
@@ -124,12 +122,12 @@ public class RinhaServlet extends HttpServlet {
 
     private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
         if ("dev".equals(profile) || shard == shardOf(id)) {
-            Log.info("Extrato from cache");
+            Log.infof("Extrato from cache [%s]", id);
             var cliente = cache.get(id);
             write(cliente, resp);
             return;
         } else {
-            Log.info("Extrato from other shard");
+            Log.infof("Extrato from other shard profile[%s] [%s,%s, %s]",profile, id, shard, shardOf(id));
             importExtrato(shard, id, resp);
         }
     }
@@ -193,38 +191,8 @@ public class RinhaServlet extends HttpServlet {
         return;
     }
 
-    private Integer shardOf(Integer id) {
+    private int shardOf(Integer id) {
         return id % 2;
-    }
-
-    private void loadExtrato(Integer id, HttpServletResponse resp) throws IOException {
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
-            stmt.setInt(1, id);
-            stmt.execute();
-            try (var rs = stmt.getResultSet()) {
-                if (resp == null)
-                    return;
-                if (rs.next()) {
-                    var result = rs.getString(1);
-                    resp.setContentType("application/json");
-                    resp.getWriter().write(result);
-                } else {
-                    sendError(resp, SC_NOT_FOUND, "Extrato nao encontrado");
-                }
-            }
-        } catch (SQLException e) {
-            var msg = e.getMessage();
-            if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
-            } else {
-                e.printStackTrace();
-                sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao" + e.getMessage());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao: " + e.getMessage());
-        }
     }
 
     private void sendError(HttpServletResponse resp, int sc, String msg) throws IOException {
@@ -291,25 +259,11 @@ public class RinhaServlet extends HttpServlet {
             stmt.setInt(2, valor);
             stmt.setString(3, tipo);
             stmt.setString(4, descricao);
-            stmt.execute();
-
-            try (var rs = stmt.getResultSet()) {
-                if (resp == null)
-                    return;
-                if (rs.next()) {
-                    Integer saldo = rs.getInt("saldo");
-                    Integer limite = rs.getInt("limite");
-
-                    var body = Map.of("limite", limite, "saldo", saldo);
-                    if (resp == null)
-                        return;
-                    resp.setContentType("application/json");
-                    resp.setCharacterEncoding("UTF-8");
-                    var output = objectMapper.writeValueAsString(body);
-                    resp.getWriter().write(output);
-                } else {
-                    sendError(resp, SC_INTERNAL_SERVER_ERROR, "No next result from transacao query");
-                }
+            stmt.executeUpdate();
+            //TODO: Update cache
+            if (resp != null) {
+                resp.setStatus(201);
+                resp.setHeader("Location", "/clientes/" + id + "/transacoes");
             }
         } catch (SQLException e) {
             handleSQLException(e, resp);

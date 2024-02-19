@@ -6,12 +6,12 @@
 ###
 
 ### BUILD STAGE ###
-FROM fedora:39 as build
-
+# FROM fedora:39 as build
+FROM ghcr.io/graalvm/native-image-community:21 as build
 # Root level
-USER root
-ENV PATH="/usr/bin:${PATH}"
-RUN bash -c "dnf install -y zip unzip gcc glibc-devel zlib-devel libstdc++-static"
+# USER root
+# ENV PATH="/usr/bin:${PATH}"
+RUN bash -c "microdnf install -y zip unzip findutils"
 # RUN bash -c "dnf upgrade"
 
 
@@ -53,9 +53,12 @@ RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
 
 ### RUNTIME STAGE ###
 # TODO FROM scratch
-# TODO FROM ghcr.io/graalvm/native-image-community:21
+# TODO 
 FROM fedora:39
-#FROM quay.io/quarkus/quarkus-micro-image:2.0
+# FROM quay.io/quarkus/quarkus-micro-image:2.0
+# FROM ghcr.io/graalvm/native-image-community:21
+LABEL maintainer="Julio Faerman <julio@caravana.cloud>"
+
 
 # Create user
 ARG USERNAME=container-user
@@ -77,4 +80,5 @@ COPY --from=build $CP_FROM $CP_TO
 
 # Container Settings
 EXPOSE 9990
-ENTRYPOINT /opt/quarkus-app/rinhadebackend-0.0.1-runner
+# TODO: Check if  -XX:MaxRAMPercentage=90 is redundant with same setting in build time
+ENTRYPOINT /opt/quarkus-app/rinhadebackend-0.0.1-runner -XX:MaxRAMPercentage=90
