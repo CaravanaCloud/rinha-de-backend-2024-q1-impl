@@ -102,7 +102,7 @@ BEGIN
     v_novo_saldo := v_saldo_atual + diff;
 
     -- Verificando se a nova transação excede o limite
-    IF v_novo_saldo < (-1 * v_limite) THEN
+    IF p_tipo = 'd' AND v_novo_saldo < (-1 * v_limite) THEN
         RAISE EXCEPTION 'Limite ultrapassado. Saldo: %, Limite: %', v_novo_saldo, v_limite;
     END IF;
 
