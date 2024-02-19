@@ -132,7 +132,7 @@ services:
     command: >
       /bin/sh -c "while true; 
         do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-           sleep 0.05; 
+           sleep 0.10; 
         done"
     deploy:
       resources: 
@@ -154,8 +154,8 @@ services:
     expose:
       - "5400"
     volumes:
-#      - ./init.postgresql.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./init.postgresql.1table.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.2tables.sql:/docker-entrypoint-initdb.d/init.sql
+#      - ./init.postgresql.1table.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
