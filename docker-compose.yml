@@ -130,7 +130,7 @@ services:
     command: >
       /bin/sh -c "while true; 
         do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-           sleep 0.25; 
+           sleep 0.05; 
         done"
     deploy:
       resources: 
