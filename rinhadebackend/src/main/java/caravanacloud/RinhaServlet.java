@@ -85,7 +85,7 @@ public class RinhaServlet extends HttpServlet {
                         null);
                 ready = true;
             } catch (Exception e) {
-                Log.errorf(e, "Warmup failed, waiting for db...");
+                Log.errorf(e, "Warmup failed ["+profile+"], waiting for db...");
                 ready = false;
                 try {
                     Thread.sleep(3000);
