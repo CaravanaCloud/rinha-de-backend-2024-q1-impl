@@ -58,7 +58,8 @@ BEGIN
     -- Obtendo o limite do cliente
     v_limite := obter_limite_cliente(p_cliente_id);
 
-    PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
+    lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
 
     -- Obtendo o saldo atual da última transação registrada para o cliente
     SELECT saldo INTO v_saldo_atual FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY realizada_em DESC LIMIT 1;
@@ -95,7 +96,8 @@ BEGIN
     -- Obtendo o limite para o cliente
     v_limite := obter_limite_cliente(p_cliente_id);
 
-    PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
+    lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
 
     -- Obtendo o saldo atual da última transação
     -- faltour order by :)

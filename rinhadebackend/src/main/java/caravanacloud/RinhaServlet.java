@@ -24,8 +24,10 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 
 @WebServlet(value = "/*")
+@Transactional
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
