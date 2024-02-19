@@ -56,7 +56,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://api01:9990/clientes/1/extrato"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9002/clientes/1/extrato"]
       interval: 3s
       retries: 15
     environment:
