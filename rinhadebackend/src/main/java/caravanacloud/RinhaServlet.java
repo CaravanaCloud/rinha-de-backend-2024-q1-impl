@@ -24,8 +24,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet(value = "/alt/*")
-public class AltRinhaServlet extends HttpServlet {
+@WebServlet(value = "/*")
+public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY =  "SELECT pg_prewarm('clientes'); SELECT pg_prewarm('transacoes');";
