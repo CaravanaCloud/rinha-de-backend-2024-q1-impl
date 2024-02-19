@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
-    private static final String WARMUP_QUERY =  "SELECT pg_prewarm('transacoes');";
+    private static final String WARMUP_QUERY =  "SELECT pg_prewarm('transacoes_1');SELECT pg_prewarm('transacoes_2');SELECT pg_prewarm('transacoes_3');SELECT pg_prewarm('transacoes_4');SELECT pg_prewarm('transacoes_5');";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject

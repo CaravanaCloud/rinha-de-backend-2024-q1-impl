@@ -27,7 +27,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.MapMaker;
 
-import caravanacloud.Cliente;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.event.Observes;
