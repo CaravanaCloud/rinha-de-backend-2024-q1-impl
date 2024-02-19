@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:latest
+    image: caravanacloud/rinhadebackend-native:dev
     hostname: api01
     container_name: api01
     depends_on:
@@ -49,7 +49,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:latest
+    image: caravanacloud/rinhadebackend-native:dev
     hostname: api02
     container_name: api02
     depends_on:
@@ -123,20 +123,20 @@ services:
         limits:
           cpus: "0.19"
           memory: "32MB"
-  warmupa:
-    hostname: warmupa
-    container_name: warmupa
-    network_mode: host 
-    image: appropriate/curl
-    command: >
-      /bin/sh -c "while true; do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-      curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"c\", 
-      \"descricao\": \"Deposito\"}' http://localhost:9999/clientes/1/transacoes; sleep 0.5; done"
-    deploy:
-      resources: 
-        limits:
-          cpus: "0.01"
-          memory: "8MB"
+#  warmupa:
+#    hostname: warmupa
+#    container_name: warmupa
+#    network_mode: host 
+#    image: appropriate/curl
+#    command: >
+#      /bin/sh -c "while true; do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
+#      curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"c\", 
+#      \"descricao\": \"Deposito\"}' http://localhost:9999/clientes/1/transacoes; sleep 0.5; done"
+#    deploy:
+#      resources: 
+#        limits:
+#          cpus: "0.01"
+#          memory: "8MB"
 
   db:
     network_mode: host
