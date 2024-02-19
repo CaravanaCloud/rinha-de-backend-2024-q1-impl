@@ -38,13 +38,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-// curl -v -X GET http://localhost:9999/cached/clientes/1/extrato
+// curl -v -X GET http://localhost:9999/clientes/1/extrato
 
 // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
 // "tipo": "c", "descricao": "Deposito"}'
 // http:///localhost:9999/clientes/1/transacoes
 
-@WebServlet(value = "/cached/*")
+//@WebServlet(value = "/cached/*")
 public class RinhaServlet extends HttpServlet {
     private static final String WARMUP_QUERY = "CREATE EXTENSION IF NOT EXISTS pg_prewarm; SELECT pg_prewarm('transacoes');";
     private static final String EXTRATO_QUERY = "SELECT json_agg(t) FROM (SELECT * FROM transacoes WHERE id = ?) t";
