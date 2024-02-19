@@ -37,25 +37,24 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-    // curl -v -X GET http://localhost:9999/clientes/1/extrato
+// curl -v -X GET http://localhost:9999/clientes/1/extrato
 
-    // curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
-    // "tipo": "c", "descricao": "Deposito"}'
-    // http:///localhost:9999/clientes/1/transacoes
+// curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,
+// "tipo": "c", "descricao": "Deposito"}'
+// http:///localhost:9999/clientes/1/transacoes
 
 @WebServlet(value = "/*")
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY = "CREATE EXTENSION IF NOT EXISTS pg_prewarm; SELECT pg_prewarm('transacoes');";
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public static Map<Integer, Cliente> cache;
     public static final Integer shard = envInt("RINHA_SHARD", 0);
 
     @ConfigProperty(name = "quarkus.profile")
     String profile;
-
 
     static {
         cache = Map.of(
@@ -70,7 +69,7 @@ public class RinhaServlet extends HttpServlet {
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
-        Log.info("Warming up ["+profile+"]....");
+        Log.info("Warming up [" + profile + "]....");
         var ready = false;
         // create json node
         var txx = objectMapper.createObjectNode()
@@ -85,7 +84,7 @@ public class RinhaServlet extends HttpServlet {
                         null);
                 ready = true;
             } catch (Exception e) {
-                Log.errorf(e, "Warmup failed ["+profile+"], waiting for db...");
+                Log.errorf(e, "Warmup failed [" + profile + "], waiting for db...");
                 ready = false;
                 try {
                     Thread.sleep(3000);
@@ -124,12 +123,12 @@ public class RinhaServlet extends HttpServlet {
     }
 
     private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
-        if ("dev".equals(profile) || shard == shardOf(id)){
+        if ("dev".equals(profile) || shard == shardOf(id)) {
             Log.info("Extrato from cache");
             var cliente = cache.get(id);
             write(cliente, resp);
             return;
-        }else {
+        } else {
             Log.info("Extrato from other shard");
             importExtrato(shard, id, resp);
         }
@@ -150,43 +149,46 @@ public class RinhaServlet extends HttpServlet {
         }
     }
 
-    private void importExtrato(Integer shard, Integer id, HttpServletResponse resp) throws IOException {
+    private void importExtrato(Integer shard, Integer id, HttpServletResponse resp) {
         int port;
-        if("dev".equals(profile)){
+        if ("dev".equals(profile)) {
             port = 9999;
-        }else{
-            port = 9000+(shard +1);
+        } else {
+            port = 9000 + (shard + 1);
         }
-        String urlString = "http://127.0.0.1:"+port+"/clientes/" + id + "/extrato";
+        String urlString = "http://127.0.0.1:" + port + "/clientes/" + id + "/extrato";
+        try {
+            URL url = URI.create(urlString).toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        URL url = URI.create(urlString).toURL();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            // Set the request method, if necessary. Default is GET.
+            connection.setRequestMethod("GET");
 
-        // Set the request method, if necessary. Default is GET.
-        connection.setRequestMethod("GET");
+            // Set a User-Agent or any header if you need
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 
-        // Set a User-Agent or any header if you need
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            // Get the input stream of the connection
+            try (InputStream inputStream = connection.getInputStream();
+                    ServletOutputStream outputStream = resp.getOutputStream()) {
 
-        // Get the input stream of the connection
-        try (InputStream inputStream = connection.getInputStream();
-                ServletOutputStream outputStream = resp.getOutputStream()) {
+                // Set the content type of the response, if known. Could be "text/html", etc.
+                resp.setContentType("application/json");
+                resp.setHeader("x-rinha-cache", "miss");
 
-            // Set the content type of the response, if known. Could be "text/html", etc.
-            resp.setContentType("application/json");
-            resp.setHeader("x-rinha-cache", "miss");
+                byte[] buffer = new byte[4096];
+                int bytesRead;
 
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-
-            // Read from the URL and write to the servlet response
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+                // Read from the URL and write to the servlet response
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
+        } catch (IOException e) {
+            Log.info("Failed to import extrato from " + urlString);
         }
         return;
     }
@@ -233,7 +235,6 @@ public class RinhaServlet extends HttpServlet {
         else
             Log.warnf("[%s] %s", sc, msg);
     }
-
 
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
