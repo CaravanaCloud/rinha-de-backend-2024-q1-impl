@@ -4,15 +4,11 @@ CREATE UNLOGGED TABLE transacoes (
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao VARCHAR(255) NOT NULL,
-	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+	realizada_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
-
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 SELECT pg_prewarm('transacoes');
-
-
 
 CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
@@ -30,10 +26,10 @@ BEGIN
         diff := p_valor;
     END IF;
     -- rplace with select
-    -- UPDATE clientes 
-    --    SET saldo = saldo + diff 
-    --    WHERE id = p_cliente_id
-    --    RETURNING saldo, limite INTO v_saldo, v_limite;
+    UPDATE clientes 
+        SET saldo = saldo + diff 
+        WHERE id = p_cliente_id
+        RETURNING saldo, limite INTO v_saldo, v_limite;
 
     IF (v_saldo + diff) < (-1 * v_limite) THEN
         RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
