@@ -37,13 +37,13 @@ static_resources:
         - endpoint:
             address:
               socket_address:
-                address: api01
-                port_value: 9999
+                address: 127.0.0.1
+                port_value: 9001
         - endpoint:
             address:
               socket_address:
-                address: api02
-                port_value: 9999
+                address: 127.0.0.1
+                port_value: 9002
     circuit_breakers:
       thresholds:
         - priority: DEFAULT
