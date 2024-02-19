@@ -68,34 +68,6 @@ public class RinhaServlet extends HttpServlet {
     @Inject
     DataSource ds;
 
-    public void onStartup(@Observes StartupEvent event) {
-        Log.infof("Warming up profile[%s] shard[%s]", profile, shard);
-        var ready = false;
-        // create json node
-        var txx = objectMapper.createObjectNode()
-                .put("valor", 0)
-                .put("tipo", "c")
-                .put("descricao", "warmup");
-        do {
-            try {
-                warmup();
-                processExtrato(1, null);
-                // postTransacao(1, txx, null);
-                ready = true;
-            } catch (Exception e) {
-                Log.errorf(e, "Warmup failed [" + profile + "], waiting for db...");
-                ready = false;
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e1) {
-                    // TODO Auto-generated catch block
-                    // e1.printStackTrace();
-                    Log.infof("Sleep interrupted");
-                }
-            }
-        } while (!ready);
-    }
-
     private static Integer envInt(String varname, int defaultVal) {
         var env = System.getenv(varname);
         if (env == null)
@@ -103,17 +75,9 @@ public class RinhaServlet extends HttpServlet {
         return Integer.parseInt(env);
     }
 
-    private void warmup() {
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(WARMUP_QUERY)) {
-            stmt.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Log.info("CACHED GET");
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
@@ -207,6 +171,7 @@ public class RinhaServlet extends HttpServlet {
 
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Log.info("CACHED POST");
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
