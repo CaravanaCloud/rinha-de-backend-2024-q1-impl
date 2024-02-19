@@ -130,8 +130,7 @@ services:
     command: >
       /bin/sh -c "while true; 
         do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-           curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"c\", \"descricao\": \"Deposito\"}' http://127.0.0.1:9999/clientes/1/transacoes; 
-           sleep 0.333; 
+           sleep 0.25; 
         done"
     deploy:
       resources: 

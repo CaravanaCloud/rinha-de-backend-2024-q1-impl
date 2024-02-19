@@ -105,4 +105,4 @@ BEGIN
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;
--- SQL init done
+-- SQL init dones

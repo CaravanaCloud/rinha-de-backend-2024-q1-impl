@@ -90,7 +90,8 @@ BEGIN
     PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
 
     -- Obtendo o saldo atual da última transação
-    SELECT saldo INTO v_saldo FROM transacoes WHERE cliente_id = p_cliente_id;
+    -- faltour order by :)
+    SELECT saldo INTO v_saldo FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY realizada_em DESC LIMIT 1;
     IF NOT FOUND THEN
         v_saldo := 0; -- Considera saldo zero se não houver transações
     END IF;
