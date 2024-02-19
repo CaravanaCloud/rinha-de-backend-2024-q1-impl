@@ -1,127 +1,108 @@
--- Criando a tabela de transações com a coluna adicional saldo
-CREATE UNLOGGED TABLE IF NOT EXISTS transacoes (
-    id SERIAL PRIMARY KEY,
-    cliente_id INTEGER NOT NULL,
-    valor INTEGER NOT NULL,
-    tipo CHAR(1) NOT NULL,
-    descricao VARCHAR(255) NOT NULL,
-    realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
-    saldo INTEGER NOT NULL DEFAULT 0
+CREATE UNLOGGED TABLE clientes (
+	id SERIAL PRIMARY KEY,
+	nome VARCHAR(255) NOT NULL,
+	limite INTEGER NOT NULL,
+	saldo INTEGER NOT NULL DEFAULT 0
 );
 
-insert into transacoes (cliente_id, valor, tipo, descricao, saldo)
-    values 
-    (1, 0, 'c', 'Deposito inicial', 0),
-    (2, 0, 'c', 'Deposito inicial', 0),
-    (3, 0, 'c', 'Deposito inicial', 0),
-    (4, 0, 'c', 'Deposito inicial', 0),
-    (5, 0, 'c', 'Deposito inicial', 0);
+CREATE UNLOGGED TABLE transacoes (
+	id SERIAL PRIMARY KEY,
+	cliente_id INTEGER NOT NULL,
+	valor INTEGER NOT NULL,
+	tipo CHAR(1) NOT NULL,
+	descricao VARCHAR(255) NOT NULL,
+	realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+	CONSTRAINT fk_clientes_transacoes_id
+		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+);
 
--- Preparando o ambiente
+INSERT INTO clientes (nome, limite) VALUES
+	('o barato sai caro', 1000 * 100),
+	('zan corp ltda', 800 * 100),
+	('les cruders', 10000 * 100),
+	('padaria joia de cocaia', 100000 * 100),
+	('kid mais', 5000 * 100);
+
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
+SELECT pg_prewarm('clientes');
 SELECT pg_prewarm('transacoes');
 
--- Definindo o tipo para o resultado da transação
+
+
 CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
--- Função para obter o limite do cliente
-CREATE OR REPLACE FUNCTION obter_limite_cliente(p_cliente_id INTEGER)
-RETURNS INTEGER AS $$
-BEGIN
-    RETURN CASE p_cliente_id
-        WHEN 1 THEN 100000
-        WHEN 2 THEN 80000
-        WHEN 3 THEN 1000000
-        WHEN 4 THEN 10000000
-        WHEN 5 THEN 500000
-        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
-    END;
-END;
-$$ LANGUAGE plpgsql;
-
--- Atualizando a função proc_transacao para incluir a lógica de limite
 CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
-RETURNS transacao_result AS $$
+RETURNS transacao_result as $$
 DECLARE
-    diff INT; -- Diferença a ser aplicada no saldo, baseada no tipo da transação
-    v_saldo_atual INT; -- Saldo atual antes da transação
-    v_novo_saldo INT; -- Novo saldo após aplicar a transação
-    v_limite INT; -- Limite do cliente
+    diff INT;
+    v_saldo INT;
+    v_limite INT;
+    result transacao_result;
 BEGIN
-    -- Determinando o valor da transação (negativo para débitos, positivo para créditos)
     IF p_tipo = 'd' THEN
-        diff := -p_valor;
+        diff := p_valor * -1;
     ELSE
         diff := p_valor;
     END IF;
 
-    -- Obtendo o limite do cliente
-    v_limite := obter_limite_cliente(p_cliente_id);
+    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
 
-    PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
 
-    -- Obtendo o saldo atual da última transação registrada para o cliente
-    SELECT saldo INTO v_saldo_atual FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY realizada_em DESC LIMIT 1;
-    IF NOT FOUND THEN
-        v_saldo_atual := 0; -- Se não existirem transações, o saldo inicial é 0
+    UPDATE clientes 
+        SET saldo = saldo + diff 
+        WHERE id = p_cliente_id
+        RETURNING saldo, limite INTO v_saldo, v_limite;
+
+    IF (v_saldo + diff) < (-1 * v_limite) THEN
+        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+    ELSE
+        result := (v_saldo, v_limite)::transacao_result;
+        INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao);
+        RETURN result;
     END IF;
-
-    -- Calculando o novo saldo após a transação
-    v_novo_saldo := v_saldo_atual + diff;
-
-    -- Se for uma transação de débito, verificar se excede o limite do cliente
-    IF p_tipo = 'd' AND v_novo_saldo < (-1 * v_limite) THEN
-        RAISE EXCEPTION 'LIMITE_INDISPONIVEL';
-    END IF;
-
-    -- Inserindo a nova transação na tabela
-    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, saldo)
-    VALUES (p_cliente_id, diff, p_tipo, p_descricao, v_novo_saldo);
-
-    -- Retornando o novo saldo e o limite
-    RETURN (v_novo_saldo, v_limite)::transacao_result;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE 'Error processing transaction: %', SQLERRM;
+        ROLLBACK;
 END;
-$$ LANGUAGE plpgsql;
-
-
--- Atualizando a função proc_extrato para usar a função de obter limite
-CREATE OR REPLACE FUNCTION proc_extrato(p_cliente_id INTEGER)
+$$ LANGUAGE plpgsql;CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
 RETURNS json AS $$
 DECLARE
-    v_saldo INTEGER;
-    v_limite INTEGER;
-    transacoes json;
+    result json;
+    row_count integer;
+    v_saldo numeric;
+    v_limite numeric;
 BEGIN
-    -- Obtendo o limite para o cliente
-    v_limite := obter_limite_cliente(p_cliente_id);
+    SELECT saldo, limite
+    INTO v_saldo, v_limite
+    FROM clientes
+    WHERE id = p_id;
 
-    PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
+    GET DIAGNOSTICS row_count = ROW_COUNT;
 
-    -- Obtendo o saldo atual da última transação
-    -- faltour order by :)
-    SELECT saldo INTO v_saldo FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY realizada_em DESC LIMIT 1;
-    IF NOT FOUND THEN
-        v_saldo := 0; -- Considera saldo zero se não houver transações
+    IF row_count = 0 THEN
+        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_id;
     END IF;
 
-    -- Obtendo as últimas transações para o cliente
-    SELECT json_agg(row_to_json(t.*)) INTO transacoes FROM (
-        SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS realizada_em
-        FROM transacoes
-        WHERE cliente_id = p_cliente_id
-        ORDER BY realizada_em DESC
-        LIMIT 10
-    ) t;
-
-    -- Construindo e retornando o JSON de resultado
-    RETURN json_build_object(
+    SELECT json_build_object(
         'saldo', json_build_object(
             'total', v_saldo,
             'data_extrato', TO_CHAR(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
             'limite', v_limite
         ),
-        'ultimas_transacoes', COALESCE(transacoes, '[]')
-    );
+        'ultimas_transacoes', COALESCE((
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as realizada_em
+                FROM transacoes
+                WHERE cliente_id = p_id
+                ORDER BY realizada_em DESC
+                LIMIT 10
+            ) t
+        ), '[]')
+    ) INTO result;
+
+    RETURN result;
 END;
 $$ LANGUAGE plpgsql;
-
+-- SQL init done
