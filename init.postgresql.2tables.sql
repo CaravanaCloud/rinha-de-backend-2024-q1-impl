@@ -31,7 +31,7 @@ SELECT pg_prewarm('transacoes');
 
 CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
-CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo VARCHAR, p_descricao VARCHAR)
+CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
 RETURNS transacao_result as $$
 DECLARE
     diff INT;
@@ -39,14 +39,13 @@ DECLARE
     v_limite INT;
     result transacao_result;
 BEGIN
+    PERFORM pg_advisory_xact_lock(p_cliente_id);
+
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
     ELSE
         diff := p_valor;
     END IF;
-
-    PERFORM * FROM clientes WHERE id = p_cliente_id FOR UPDATE;
-
 
     UPDATE clientes 
         SET saldo = saldo + diff 
@@ -75,10 +74,12 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
+    PERFORM pg_advisory_xact_lock(p_id);
+
     SELECT saldo, limite
-    INTO v_saldo, v_limite
-    FROM clientes
-    WHERE id = p_id;
+        INTO v_saldo, v_limite
+        FROM clientes
+        WHERE id = p_id;
 
     GET DIAGNOSTICS row_count = ROW_COUNT;
 
@@ -97,8 +98,8 @@ BEGIN
                 SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as realizada_em
                 FROM transacoes
                 WHERE cliente_id = p_id
-                -- ORDER BY realizada_em DESC
-                ORDER BY id DESC
+                ORDER BY realizada_em DESC
+                -- ORDER BY id DESC
                 LIMIT 10
             ) t
         ), '[]')
