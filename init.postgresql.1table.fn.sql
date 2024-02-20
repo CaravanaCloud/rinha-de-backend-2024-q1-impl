@@ -1,5 +1,6 @@
 -- Criando a tabela de transações com a coluna adicional saldo
-CREATE UNLOGGED TABLE IF NOT EXISTS transacoes (
+-- UNLOGGED?
+CREATE  TABLE IF NOT EXISTS transacoes (
     id SERIAL PRIMARY KEY,
     cliente_id INTEGER NOT NULL,
     valor INTEGER NOT NULL,
@@ -49,7 +50,7 @@ DECLARE
     v_limite INT; -- Limite do cliente
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
-    lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
     -- Determinando o valor da transação (negativo para débitos, positivo para créditos)
     IF p_tipo = 'd' THEN
@@ -98,7 +99,7 @@ DECLARE
     transacoes json;
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
-    lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- lock table transacoes in ACCESS EXCLUSIVE mode;
     -- Obtendo o limite para o cliente
     v_limite := obter_limite_cliente(p_cliente_id);
 
