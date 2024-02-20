@@ -61,12 +61,15 @@ BEGIN
         diff := p_valor;
     END IF;
     
-    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, CURRENT_TIMESTAMP );
+    INSERT INTO transacoes 
+                     (cliente_id,   valor,   tipo,   descricao,      realizada_em)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, CURRENT_TIMESTAMP);
+
     UPDATE clientes 
         SET saldo = saldo + diff 
         WHERE id = p_cliente_id
         RETURNING saldo, limite INTO v_saldo, v_limite;
+
     result := (v_saldo, v_limite)::transacao_result;
     RETURN result;
 EXCEPTION
