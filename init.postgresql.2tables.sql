@@ -42,33 +42,38 @@ DECLARE
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
 
+    -- check saldo before update
+    SELECT saldo, limite
+        INTO v_saldo, v_limite
+        FROM clientes
+        WHERE id = p_cliente_id;
 
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
+        IF (v_saldo + diff) < (-1 * v_limite) THEN
+            RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+        END IF;
     ELSE
         diff := p_valor;
     END IF;
-
+    
+    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, CURRENT_TIMESTAMP );
     UPDATE clientes 
         SET saldo = saldo + diff 
         WHERE id = p_cliente_id
         RETURNING saldo, limite INTO v_saldo, v_limite;
-
-    IF (v_saldo + diff) < (-1 * v_limite) THEN
-        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
-    ELSE
-        result := (v_saldo, v_limite)::transacao_result;
-        INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, CURRENT_TIMESTAMP );
-
-        RETURN result;
-    END IF;
+    result := (v_saldo, v_limite)::transacao_result;
+    RETURN result;
 EXCEPTION
     WHEN OTHERS THEN
         RAISE 'Error processing transaction: %', SQLERRM;
         ROLLBACK;
 END;
-$$ LANGUAGE plpgsql;CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
 RETURNS json AS $$
 DECLARE
     result json;
