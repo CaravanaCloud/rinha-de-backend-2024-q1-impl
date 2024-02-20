@@ -40,7 +40,12 @@ DECLARE
     v_limite INT;
     result transacao_result;
 BEGIN
-    PERFORM pg_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_advisory_lock(p_id);
+    PERFORM pg_try_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_advisory_xact_lock(p_id);
+    -- lock table clientes in ACCESS EXCLUSIVE mode;
+    -- lock table transacoes in ACCESS EXCLUSIVE mode;
+
 
     SELECT saldo, limite
         INTO v_saldo, v_limite
@@ -80,7 +85,11 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
-    PERFORM pg_advisory_xact_lock(p_id);
+    PERFORM pg_try_advisory_xact_lock(p_id);
+    -- PERFORM pg_try_advisory_lock(p_id);
+    -- PERFORM pg_advisory_xact_lock(p_id);
+    -- lock table clientes in ACCESS EXCLUSIVE mode;
+    -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
     SELECT saldo, limite
         INTO v_saldo, v_limite
