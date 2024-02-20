@@ -49,6 +49,7 @@ DECLARE
     v_limite INT; -- Limite do cliente
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
+    lock table transacoes in ACCESS EXCLUSIVE mode;
 
     -- Determinando o valor da transação (negativo para débitos, positivo para créditos)
     IF p_tipo = 'd' THEN
@@ -61,7 +62,7 @@ BEGIN
     v_limite := obter_limite_cliente(p_cliente_id);
 
 
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- 
     -- PERFORM id FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY id DESC FOR UPDATE;
 
     -- Obtendo o saldo atual da última transação registrada para o cliente
@@ -97,6 +98,7 @@ DECLARE
     transacoes json;
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
+    lock table transacoes in ACCESS EXCLUSIVE mode;
     -- Obtendo o limite para o cliente
     v_limite := obter_limite_cliente(p_cliente_id);
 
