@@ -2,6 +2,7 @@ package caravanacloud;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static jakarta.servlet.http.HttpServletResponse.SC_NOT_ACCEPTABLE;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import java.io.BufferedReader;
@@ -26,26 +27,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 
-@WebServlet(value = "/clientes/*")
+@WebServlet(value = "/*")
 @Transactional
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY =  "SELECT pg_prewarm('transacoes');";
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Set<String> validIds = Set.of("1", "2", "3", "4", "5");
 
     @Inject
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
-        Log.info("Warming up....");
+        Log.info("Pocó 🐔💥");
         var ready = false;
         // create json node
-        var txx = objectMapper.createObjectNode()
+        /* var txx = objectMapper.createObjectNode()
                 .put("valor", 0)
                 .put("tipo", "c")
-                .put("descricao", "warmup from servlet");
+                .put("descricao", "warmup from servlet"); */
         do {
             try {
                 warmup();
@@ -77,16 +77,24 @@ public class RinhaServlet extends HttpServlet {
 
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected synchronized void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        var id = getId(req, resp);
+        if (id != null) {
+            processExtrato(id, resp);
+        }else {
+            sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
+        }
+    }
+
+    private Integer getId(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
-        if  (! validIds.contains(id)) {
-            sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
-            return;
+        var result = Integer.valueOf(id);
+        if  (result <= 0 || result > 5) {
+            return null;
         }
-        // Log.info(pathInfo + " => " + id);
-        processExtrato(Integer.valueOf(id), resp);
+        return Integer.valueOf(id);
     }
 
     private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
@@ -132,11 +140,9 @@ public class RinhaServlet extends HttpServlet {
     // "tipo": "c", "descricao": "Deposito"}'
     // http:///localhost:9999/clientes/1/transacoes
     @Override
-    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        var pathInfo = req.getPathInfo();
-        // var id = pathInfo.substring(10,11);
-        var id = pathInfo.split("/")[2];
-        if  (! validIds.contains(id)) {
+    public synchronized void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        var id = getId(req, resp);
+        if (id == null) {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
             return;
         }

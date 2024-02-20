@@ -126,21 +126,21 @@ services:
           cpus: "0.19"
           memory: "32MB"
 
-  warmupa:
-    hostname: warmupa
-    container_name: warmupa
-    network_mode: host 
-    image: appropriate/curl
-    command: >
-      /bin/sh -c "while true; 
-        do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
-           sleep 0.10; 
-        done"
-    deploy:
-      resources: 
-        limits:
-          cpus: "0.2"
-          memory: "8MB"
+#  warmupa:
+#    hostname: warmupa
+#    container_name: warmupa
+#    network_mode: host 
+#    image: appropriate/curl
+#    command: >
+#      /bin/sh -c "while true; 
+#        do curl -s http://127.0.0.1:9999/clientes/1/extrato; 
+#           sleep 0.10; 
+#        done"
+#    deploy:
+#      resources: 
+#        limits:
+#          cpus: "0.2"
+#          memory: "8MB"
 
   db:
     network_mode: host

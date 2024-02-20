@@ -81,8 +81,8 @@ BEGIN
     END IF;
 
     -- Inserindo a nova transação na tabela
-    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, saldo)
-    VALUES (p_cliente_id, diff, p_tipo, p_descricao, v_novo_saldo);
+    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em, saldo)
+    VALUES (p_cliente_id, diff, p_tipo, p_descricao, now(), v_novo_saldo);
 
     -- Retornando o novo saldo e o limite
     RETURN (v_novo_saldo, v_limite)::transacao_result;
