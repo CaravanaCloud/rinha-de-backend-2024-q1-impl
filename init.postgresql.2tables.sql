@@ -1,11 +1,12 @@
-CREATE UNLOGGED TABLE clientes (
+-- UNLOGGED?
+CREATE  TABLE clientes (
 	id SERIAL PRIMARY KEY,
 	nome VARCHAR(255) NOT NULL,
 	limite INTEGER NOT NULL,
 	saldo INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE UNLOGGED TABLE transacoes (
+CREATE  TABLE transacoes (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
@@ -24,8 +25,8 @@ INSERT INTO clientes (nome, limite) VALUES
 	('kid mais', 5000 * 100);
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
-SELECT pg_prewarm('clientes');
-SELECT pg_prewarm('transacoes');
+-- SELECT pg_prewarm('clientes');
+-- SELECT pg_prewarm('transacoes');
 
 
 
@@ -40,6 +41,7 @@ DECLARE
     result transacao_result;
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
+
 
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
@@ -57,7 +59,7 @@ BEGIN
     ELSE
         result := (v_saldo, v_limite)::transacao_result;
         INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now());
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, CURRENT_TIMESTAMP );
 
         RETURN result;
     END IF;
@@ -81,9 +83,7 @@ BEGIN
         FROM clientes
         WHERE id = p_id;
 
-    GET DIAGNOSTICS row_count = ROW_COUNT;
-
-    IF row_count = 0 THEN
+    IF NOT FOUND THEN
         RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_id;
     END IF;
 
