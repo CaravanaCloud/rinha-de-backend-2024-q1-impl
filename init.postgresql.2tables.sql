@@ -106,12 +106,12 @@ BEGIN
     SELECT json_build_object(
         'saldo', json_build_object(
             'total', v_saldo,
-            'data_extrato', TO_CHAR(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+            'data_extrato', TO_CHAR(NOW(), 'YYYY-MM-DD HH:MI:SS.US'),
             'limite', v_limite
         ),
         'ultimas_transacoes', COALESCE((
             SELECT json_agg(row_to_json(t)) FROM (
-                SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as realizada_em
+                SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD HH:MI:SS.US') as realizada_em
                 FROM transacoes
                 WHERE cliente_id = p_id
                 ORDER BY realizada_em DESC
