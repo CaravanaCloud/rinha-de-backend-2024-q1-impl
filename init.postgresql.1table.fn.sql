@@ -6,7 +6,7 @@ CREATE  TABLE IF NOT EXISTS transacoes (
     valor INTEGER NOT NULL,
     tipo CHAR(1) NOT NULL,
     descricao VARCHAR(255) NOT NULL,
-    realizada_em TIMESTAMP NOT NULL DEFAULT NOW(),
+    realizada_em TIMESTAMP(6) NOT NULL DEFAULT NOW(),
     saldo INTEGER NOT NULL DEFAULT 0
 );
 
