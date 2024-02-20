@@ -42,7 +42,6 @@ DECLARE
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
 
-    -- check saldo before update
     SELECT saldo, limite
         INTO v_saldo, v_limite
         FROM clientes
@@ -68,7 +67,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         RAISE 'Error processing transaction: %', SQLERRM;
-        ROLLBACK;
+
 END;
 $$ LANGUAGE plpgsql;
 
