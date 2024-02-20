@@ -48,7 +48,7 @@ DECLARE
     v_novo_saldo INT; -- Novo saldo após aplicar a transação
     v_limite INT; -- Limite do cliente
 BEGIN
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
+    PERFORM pg_advisory_xact_lock(p_cliente_id);
 
     -- Determinando o valor da transação (negativo para débitos, positivo para créditos)
     IF p_tipo = 'd' THEN
