@@ -38,12 +38,12 @@ public class RinhaServlet extends HttpServlet {
         do {
             try {
                 processExtrato(1,null);
-                postTransacao(1, Map.of(
+                /* postTransacao(1, Map.of(
                     "valor", "0",
                     "tipo", "c",
                     "descricao", "warmup"
                 ), 
-                null);
+                null); */
                 ready = true;
             }catch(Exception e){
                 Log.errorf(e, "Warmuyp failed, waiting for db...");

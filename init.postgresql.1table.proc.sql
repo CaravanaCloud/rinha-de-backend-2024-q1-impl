@@ -60,7 +60,13 @@ BEGIN
     -- Chamada para obter o limite do cliente
     v_limite := limite_cliente(p_cliente_id);
 
-    SELECT saldo INTO v_saldo_atual FROM transacoes WHERE cliente_id = p_cliente_id ORDER BY realizada_em DESC LIMIT 1;
+    SELECT saldo 
+        INTO v_saldo_atual 
+        FROM transacoes 
+        WHERE cliente_id = p_cliente_id 
+        ORDER BY id 
+        DESC LIMIT 1;
+
     IF NOT FOUND THEN
         v_saldo_atual := 0;
     END IF;
@@ -100,7 +106,7 @@ BEGIN
         SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS realizada_em
         FROM transacoes
         WHERE cliente_id = p_cliente_id
-        ORDER BY realizada_em DESC
+        ORDER BY id DESC
         LIMIT 10
     ) t;
 

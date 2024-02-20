@@ -45,13 +45,13 @@ public class RinhaServlet extends HttpServlet {
         var txx = objectMapper.createObjectNode()
                 .put("valor", 0)
                 .put("tipo", "c")
-                .put("descricao", "warmup");
+                .put("descricao", "warmup from servlet");
         do {
             try {
                 warmup();
                 processExtrato(1, null);
-                postTransacao(1, txx,
-                        null);
+                /* postTransacao(1, txx,
+                        null); */
                 ready = true;
             } catch (Exception e) {
                 Log.errorf(e, "Warmup failed [%s], waiting for db", e.getMessage());
