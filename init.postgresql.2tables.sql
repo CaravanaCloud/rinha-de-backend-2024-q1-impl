@@ -26,9 +26,9 @@ INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
     FROM clientes;
 
 
--- CREATE EXTENSION IF NOT EXISTS pg_prewarm;
--- SELECT pg_prewarm('clientes');
--- SELECT pg_prewarm('transacoes');
+CREATE EXTENSION IF NOT EXISTS pg_prewarm;
+SELECT pg_prewarm('clientes');
+SELECT pg_prewarm('transacoes');
 
 
 CREATE OR REPLACE FUNCTION limite_cliente(p_cliente_id INTEGER)
