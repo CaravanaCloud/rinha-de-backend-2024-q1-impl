@@ -48,7 +48,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "90MB"
+          memory: "100MB"
 
   api02:
     network_mode: host
@@ -97,7 +97,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "90MB"
+          memory: "100MB"
 
   nginx:
     hostname: lb
@@ -127,7 +127,6 @@ services:
         limits:
           cpus: "0.19"
           memory: "32MB"
-#           curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 0, "tipo": "c", "descricao": "warmupa"}'  http:///localhost:9999/clientes/1/transacoes;  
 
   warmupa:
     hostname: warmupa
@@ -137,7 +136,8 @@ services:
     command: >
       /bin/sh -c "while true; 
         do curl -s http://127.0.0.1:9999/clientes/1/extrato;
-           sleep 0.10; 
+           curl -s -X POST -H "Content-Type: application/json" -d '{\"valor\": 0, \"tipo\": \"c\", \"descricao\": \"warmupa\"}'  http:///localhost:9999/clientes/1/transacoes; 
+           sleep 0.05; 
         done"
     deploy:
       resources: 
@@ -166,7 +166,7 @@ services:
       resources: 
         limits:
           cpus: "0.70"
-          memory: "330MB"
+          memory: "310MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
