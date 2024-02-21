@@ -46,6 +46,8 @@ RUN mkdir -p "/home/$USERNAME/quarkus-app"
 WORKDIR "/home/$USERNAME/quarkus-app"
 COPY --chown=$USERNAME . .
 
+RUN ls -liah profile.iprof
+
 ## Build
 ARG MVN_XOPTS="-Dnative  -fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
