@@ -10,8 +10,8 @@ docker build \
     -f "$DIR/src/main/docker/Dockerfile.native" \
     --no-cache \
     --progress=plain \
-    -t caravanacloud/rinhadebackend-native:dev "$DIR"
-docker push caravanacloud/rinhadebackend-native:dev
+    -t caravanacloud/rinhadebackend-native:latest "$DIR"
+docker push caravanacloud/rinhadebackend-native:latest
 
 # echo "## Building Default image"
 # docker build -f "$DIR/src/main/docker/Dockerfile" --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest "$DIR"

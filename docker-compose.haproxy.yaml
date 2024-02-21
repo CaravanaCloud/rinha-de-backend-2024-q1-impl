@@ -97,13 +97,13 @@ services:
           cpus: "0.25"
           memory: "80MB"
 
-  nginx:
+  haproxy:
     hostname: lb
     container_name: lb
     network_mode: host 
-    image: nginx:latest
+    image: haproxy:alpine3.19
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
       api01:
         condition: service_healthy
@@ -116,8 +116,8 @@ services:
         soft: 1000000
         hard: 1000000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9999/clientes/1/extrato"]
-      # test: ["CMD", "sleep", "5"]
+      # test: ["CMD", "curl", "-f", "http://127.0.0.1:9999/clientes/1/extrato"]
+      test: ["CMD", "sleep", "5"]
       interval: 3s
       retries: 15
     deploy:
