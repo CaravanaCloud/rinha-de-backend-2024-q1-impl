@@ -8,12 +8,10 @@ import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
@@ -24,8 +22,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.TransactionManager;
 import jakarta.transaction.Transactional;
 
 @WebServlet(value = "/*")
@@ -33,29 +29,38 @@ import jakarta.transaction.Transactional;
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
-    private static final String WARMUP_QUERY =  "select 1+1;";
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final String WARMUP_QUERY = "select 1+1;";
+    private static final String valorPattern = "\"valor\":\\s*(\\d+)";
+    private static final String tipoPattern = "\"tipo\":\\s*\"([cd])\"";
+    private static final String descricaoPattern = "\"descricao\":\\s*\"([^\"]*)\"";
+
+    private static final Pattern pValor = Pattern.compile(valorPattern);
+    private static final Pattern pTipo = Pattern.compile(tipoPattern);
+    private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
 
     @Inject
     DataSource ds;
 
-    @Inject 
-    TransactionManager tm;
+
 
     public void onStartup(@Observes StartupEvent event) {
         Log.info("Pocó 🐔💥");
         var ready = false;
         // create json node
-        /* var txx = objectMapper.createObjectNode()
-                .put("valor", 0)
-                .put("tipo", "c")
-                .put("descricao", "warmup from servlet"); */
+        /*
+         * var txx = objectMapper.createObjectNode()
+         * .put("valor", 0)
+         * .put("tipo", "c")
+         * .put("descricao", "warmup from servlet");
+         */
         do {
             try {
                 warmup();
                 processExtrato(1, null);
-                /* postTransacao(1, txx,
-                        null); */
+                /*
+                 * postTransacao(1, txx,
+                 * null);
+                 */
                 ready = true;
             } catch (Exception e) {
                 Log.errorf(e, "Warmup failed [%s], waiting for db", e.getMessage());
@@ -73,21 +78,14 @@ public class RinhaServlet extends HttpServlet {
     private void warmup() {
         var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
         try (var conn = ds.getConnection();
-             var stmt = conn.prepareStatement(query)) {
+                var stmt = conn.prepareStatement(query)) {
             stmt.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private void debug() throws SystemException {
-        var tx = tm.getTransaction();
-        if (tx == null) {
-            Log.warn("No transaction");
-        }
-        var status = tx.getStatus();
-        Log.infof("Transaction status: %s", status);
-    }
+
 
     private String getEnv(String varName, String defaultVal) {
         var result = System.getenv(varName);
@@ -103,17 +101,17 @@ public class RinhaServlet extends HttpServlet {
         var id = getId(req, resp);
         if (id != null) {
             processExtrato(id, resp);
-        }else {
+        } else {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
         }
     }
 
-    private Integer getId(HttpServletRequest req, HttpServletResponse resp) throws IOException{
+    private Integer getId(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         var pathInfo = req.getPathInfo();
         // var id = pathInfo.substring(10,11);
         var id = pathInfo.split("/")[2];
         var result = Integer.valueOf(id);
-        if  (result <= 0 || result > 5) {
+        if (result <= 0 || result > 5) {
             return null;
         }
         return Integer.valueOf(id);
@@ -171,21 +169,42 @@ public class RinhaServlet extends HttpServlet {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
             return;
         }
-        // Log.info(pathInfo + " => " + id);
-        JsonNode json;
+        StringBuilder requestBody = new StringBuilder();
+        String line;
         try (BufferedReader reader = req.getReader()) {
-            json = objectMapper.readTree(reader);
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
         } catch (Exception e) {
             sendError(resp, SC_BAD_REQUEST, "Invalid request body " + e.getMessage());
             return;
         }
-        postTransacao(Integer.valueOf(id), json, resp);
+
+        String json = requestBody.toString();
+
+        Matcher mValor = pValor.matcher(json);
+        Matcher mTipo = pTipo.matcher(json);
+        Matcher mDescricao = pDescricao.matcher(json);
+
+        if (mValor.find() && mTipo.find() && mDescricao.find()) {
+            // Os valores foram extraídos com sucesso
+            String valor = mValor.group(1);
+            String tipo = mTipo.group(1);
+            String descricao = mDescricao.group(1);
+
+            // Agora você pode usar os valores extraídos para processar a transação
+            // Este é um exemplo de como você pode prosseguir, ajuste de acordo com sua
+            // lógica de negócios
+            postTransacao(id, valor, tipo, descricao, resp);
+        } else {
+            sendError(resp, 422, "Corpo da requisição JSON inválido ou incompleto.");
+        }
         return;
     }
 
-    private void postTransacao(Integer id, JsonNode t, HttpServletResponse resp) throws IOException {
+    private void postTransacao(Integer id, String valorNumber, String tipo, String descricao, HttpServletResponse resp)
+            throws IOException {
         // Validate and process the transaction as in the original resource
-        var valorNumber = t.get("valor").asText();
         if (valorNumber == null || valorNumber.contains(".")) {
             if (resp != null)
                 sendError(resp, 422, "Valor invalido");
@@ -201,14 +220,12 @@ public class RinhaServlet extends HttpServlet {
             return;
         }
 
-        var tipo = (String) t.get("tipo").asText();
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
             if (resp != null)
                 sendError(resp, 422, "Tipo invalido");
             return;
         }
 
-        var descricao = (String) t.get("descricao").asText();
         if (descricao == null || descricao.isEmpty() || descricao.length() > 10 || "null".equals(descricao)) {
             if (resp != null)
                 sendError(resp, 422, "Descricao invalida");
