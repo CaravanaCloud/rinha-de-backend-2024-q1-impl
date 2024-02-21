@@ -72,14 +72,14 @@ BEGIN
         FOR UPDATE;
 
     IF p_tipo = 'd' THEN
-        diff := p_valor * -1;
+        diff := p_valor * -1;            
+        IF (v_saldo + diff) < (-1 * v_limite) THEN
+            RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+        END IF;
     ELSE
         diff := p_valor;
     END IF;
-    
-    IF (v_saldo + diff) < (-1 * v_limite) THEN
-        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
-    END IF;
+
     
     INSERT INTO transacoes 
                      (cliente_id,   valor,   tipo,   descricao,      realizada_em)
