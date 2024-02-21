@@ -9,17 +9,13 @@ CREATE UNLOGGED TABLE transacoes (
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao VARCHAR(10) NOT NULL,
-	realizada_em TIMESTAMP(6) NOT NULL
+	realizada_em TIMESTAMP(6) NOT NULL,
+    realizada_em_char VARCHAR(32) NOT NULL
 );
 
 CREATE INDEX idx_cliente_id ON transacoes (cliente_id);
 
 INSERT INTO clientes(id) VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT);
-
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-    SELECT id, 0, 'c', 'init', now()
-    FROM clientes;
-
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 SELECT pg_prewarm('clientes');
@@ -54,26 +50,25 @@ BEGIN
         WHERE id = p_cliente_id
         FOR UPDATE;
 
-    IF p_tipo = 'd' THEN
-        diff := p_valor * -1;            
-        IF (v_saldo + diff) < (-1 * v_limite) THEN
+    IF p_tipo = 'd' AND ((v_saldo - p_valor) < (-1 * v_limite)) THEN
             result.body := 'LIMITE_INDISPONIVEL';
             result.status_code := 422;
             RETURN result;
-        END IF;
-    ELSE
-        diff := p_valor;
     END IF;
-
     
     INSERT INTO transacoes 
-                     (cliente_id,   valor,   tipo,   descricao,      realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now());
+                     (cliente_id,   valor,   tipo,   descricao,      realizada_em, realizada_em_char)
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(), TO_CHAR(now(), 'YYYY-MM-DD HH:MI:SS.US'));
 
     UPDATE clientes 
-        SET saldo = saldo + diff 
+    SET saldo = CASE 
+                    WHEN p_tipo = 'c' THEN saldo + p_valor
+                    WHEN p_tipo = 'd' THEN saldo - p_valor
+                    ELSE saldo
+                END
         WHERE id = p_cliente_id
         RETURNING saldo INTO v_saldo;
+
 
     SELECT json_build_object(
         'saldo', v_saldo,
@@ -99,12 +94,6 @@ BEGIN
         FROM clientes
         WHERE id = p_cliente_id;
 
-    IF NOT FOUND THEN
-            result.body := 'CLIENTE_NAO_ENCONTRADO';
-            result.status_code := 404;
-            RETURN result;
-    END IF;
-
     v_limite := CASE p_cliente_id
         WHEN 1 THEN 100000
         WHEN 2 THEN 80000
@@ -122,7 +111,7 @@ BEGIN
         ),
         'ultimas_transacoes', COALESCE((
             SELECT json_agg(row_to_json(t)) FROM (
-                SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD HH:MI:SS.US') as realizada_em
+                SELECT valor, tipo, descricao, realizada_em_char
                 FROM transacoes
                 WHERE cliente_id = p_cliente_id
                 ORDER BY realizada_em DESC
