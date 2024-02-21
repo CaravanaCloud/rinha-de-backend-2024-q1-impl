@@ -30,9 +30,9 @@ public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
     private static final String WARMUP_QUERY = "select 1+1;";
-    private static final String valorPattern = "\"valor\":\\s*(\\d+)";
-    private static final String tipoPattern = "\"tipo\":\\s*\"([cd])\"";
-    private static final String descricaoPattern = "\"descricao\":\\s*\"([^\"]*)\"";
+    private static final String valorPattern = "\"valor\":\\s*(\\d+(\\.\\d+)?)";
+    private static final String tipoPattern = "\"tipo\":\\s*\"([^\"]*)\"";
+    private static final String descricaoPattern = "\"descricao\":\\s*(?:\"([^\"]*)\"|null)";
 
     private static final Pattern pValor = Pattern.compile(valorPattern);
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
@@ -41,26 +41,15 @@ public class RinhaServlet extends HttpServlet {
     @Inject
     DataSource ds;
 
-
-
     public void onStartup(@Observes StartupEvent event) {
         Log.info("Pocó 🐔💥");
         var ready = false;
         // create json node
-        /*
-         * var txx = objectMapper.createObjectNode()
-         * .put("valor", 0)
-         * .put("tipo", "c")
-         * .put("descricao", "warmup from servlet");
-         */
         do {
             try {
                 warmup();
                 processExtrato(1, null);
-                /*
-                 * postTransacao(1, txx,
-                 * null);
-                 */
+                postTransacao(1, "0", "c", "onStartup", null);
                 ready = true;
             } catch (Exception e) {
                 Log.errorf(e, "Warmup failed [%s], waiting for db", e.getMessage());
@@ -68,26 +57,21 @@ public class RinhaServlet extends HttpServlet {
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
             }
         } while (!ready);
     }
 
-    private void warmup() {
+    private void warmup() throws SQLException{
         var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(query)) {
             stmt.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
-
-
-    private String getEnv(String varName, String defaultVal) {
+    private static String getEnv(String varName, String defaultVal) {
         var result = System.getenv(varName);
         if (result == null) {
             result = defaultVal;
