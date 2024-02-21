@@ -101,11 +101,11 @@ BEGIN
     lock table transacoes in ACCESS EXCLUSIVE mode;
 
     SELECT saldo 
-        INTO v_saldo
         FROM transacoes
-        WHERE id = p_cliente_id
-        ORDER BY realizada_em DESC
-        LIMIT 1;
+        WHERE cliente_id = p_cliente_id
+        ORDER BY id DESC
+        LIMIT 1
+        INTO v_saldo;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_cliente_id;
