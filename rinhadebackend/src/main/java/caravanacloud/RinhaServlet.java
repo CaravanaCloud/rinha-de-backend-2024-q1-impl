@@ -2,14 +2,13 @@ package caravanacloud;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static jakarta.servlet.http.HttpServletResponse.SC_NOT_ACCEPTABLE;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -28,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.Transactional;
-import static jakarta.transaction.Transactional.TxType.*;
 
 @WebServlet(value = "/*")
 @Transactional(REQUIRES_NEW)
@@ -131,7 +129,9 @@ public class RinhaServlet extends HttpServlet {
                 if (resp == null)
                     return;
                 if (rs.next()) {
-                    var result = rs.getString(1);
+                    var result = rs.getString("body");
+                    var status = rs.getInt("status_code");
+                    resp.setStatus(status);
                     resp.setContentType("application/json");
                     resp.getWriter().write(result);
                 } else {
@@ -222,21 +222,16 @@ public class RinhaServlet extends HttpServlet {
             stmt.setString(3, tipo);
             stmt.setString(4, descricao);
             stmt.execute();
-
             try (var rs = stmt.getResultSet()) {
-                if (resp == null)
-                    return;
                 if (rs.next()) {
-                    Integer saldo = rs.getInt("saldo");
-                    Integer limite = rs.getInt("limite");
-
-                    var body = Map.of("limite", limite, "saldo", saldo);
+                    var body = rs.getString("body");
+                    var status = rs.getInt("status_code");
                     if (resp == null)
                         return;
+                    resp.setStatus(status);
                     resp.setContentType("application/json");
                     resp.setCharacterEncoding("UTF-8");
-                    var output = objectMapper.writeValueAsString(body);
-                    resp.getWriter().write(output);
+                    resp.getWriter().write(body);
                 } else {
                     sendError(resp, SC_INTERNAL_SERVER_ERROR, "No next result from transacao query");
                 }

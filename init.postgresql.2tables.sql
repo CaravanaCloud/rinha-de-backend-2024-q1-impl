@@ -45,24 +45,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TYPE transacao_result AS (saldo INT, limite INT);
+CREATE TYPE json_result AS (
+  status_code INT,
+  body json
+);
 
 CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
-RETURNS transacao_result as $$
+RETURNS json_result as $$
 DECLARE
     diff INT;
     v_saldo INT;
     v_limite INT;
-    result transacao_result;
+    result json_result;
 BEGIN
-    -- PERFORM pg_try_advisory_xact_lock(42);
-    -- PERFORM pg_advisory_lock(p_cliente_id);
-    -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
-
-    -- invoke limite_cliente into v_limite
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
     
     SELECT saldo 
@@ -74,7 +69,9 @@ BEGIN
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;            
         IF (v_saldo + diff) < (-1 * v_limite) THEN
-            RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
+            result.body := 'LIMITE_INDISPONIVEL';
+            result.status_code := 422;
+            RETURN result;
         END IF;
     ELSE
         diff := p_valor;
@@ -90,30 +87,24 @@ BEGIN
         WHERE id = p_cliente_id
         RETURNING saldo INTO v_saldo;
 
-    result := (v_saldo, v_limite)::transacao_result;
+    SELECT json_build_object(
+        'saldo', v_saldo,
+        'limite', v_limite
+    ) into result.body;
+    result.status_code := 200;
     RETURN result;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE 'Error processing transaction: %', SQLERRM;
-
 END;
 $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION proc_extrato(p_cliente_id int)
-RETURNS json AS $$
+RETURNS json_result AS $$
 DECLARE
-    result json;
+    result json_result;
     row_count integer;
     v_saldo numeric;
     v_limite numeric;
 BEGIN
-    -- PERFORM pg_try_advisory_xact_lock(42);
-    -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_try_advisory_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
     SELECT saldo
         INTO v_saldo
@@ -121,7 +112,9 @@ BEGIN
         WHERE id = p_cliente_id;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_cliente_id;
+            result.body := 'CLIENTE_NAO_ENCONTRADO';
+            result.status_code := 404;
+            RETURN result;
     END IF;
 
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
@@ -137,13 +130,11 @@ BEGIN
                 FROM transacoes
                 WHERE cliente_id = p_cliente_id
                 ORDER BY realizada_em DESC
-                -- ORDER BY id DESC
                 LIMIT 10
             ) t
         ), '[]')
-    ) INTO result;
-
+    ) INTO result.body;
+    result.status_code := 200;
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;
--- SQL init done

@@ -1,0 +1,2 @@
+curl -v -X GET http://localhost:9999/clientes/1/extrato
+curl -v -X POST -H "Content-Type: application/json" -d '{"valor": 100,"tipo": "c", "descricao": "Deposito"}' http:///localhost:9999/clientes/1/transacoes
