@@ -101,7 +101,7 @@ public class RinhaServlet extends HttpServlet {
 
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @Override
-    protected synchronized void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id != null) {
             processExtrato(id, resp);
@@ -165,7 +165,7 @@ public class RinhaServlet extends HttpServlet {
     // "tipo": "c", "descricao": "Deposito"}'
     // http:///localhost:9999/clientes/1/transacoes
     @Override
-    public synchronized void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id == null) {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
