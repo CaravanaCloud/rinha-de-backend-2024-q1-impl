@@ -32,7 +32,7 @@ import jakarta.transaction.Transactional;
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
-    private static final String WARMUP_QUERY =  "SELECT pg_prewarm('transacoes');";
+    private static final String WARMUP_QUERY =  "select * from clientes limit 1; select * from transacoes limit 1;";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
@@ -67,12 +67,21 @@ public class RinhaServlet extends HttpServlet {
     }
 
     private void warmup() {
+        var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
         try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(WARMUP_QUERY)) {
+             var stmt = conn.prepareStatement(query)) {
             stmt.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getEnv(String varName, String defaultVal) {
+        var result = System.getenv(varName);
+        if (result == null) {
+            result = defaultVal;
+        }
+        return result;
     }
 
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
