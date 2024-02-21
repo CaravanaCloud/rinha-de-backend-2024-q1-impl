@@ -25,10 +25,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.TransactionManager;
 import jakarta.transaction.Transactional;
+import static jakarta.transaction.Transactional.TxType.*;
 
 @WebServlet(value = "/*")
-@Transactional
+@Transactional(Transactional.TxType.REQUIRES_NEW)
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
@@ -37,6 +40,9 @@ public class RinhaServlet extends HttpServlet {
 
     @Inject
     DataSource ds;
+
+    @Inject 
+    TransactionManager tm;
 
     public void onStartup(@Observes StartupEvent event) {
         Log.info("Pocó 🐔💥");
@@ -76,6 +82,15 @@ public class RinhaServlet extends HttpServlet {
         }
     }
 
+    private void debug() throws SystemException {
+        var tx = tm.getTransaction();
+        if (tx == null) {
+            Log.warn("No transaction");
+        }
+        var status = tx.getStatus();
+        Log.infof("Transaction status: %s", status);
+    }
+
     private String getEnv(String varName, String defaultVal) {
         var result = System.getenv(varName);
         if (result == null) {
@@ -110,6 +125,7 @@ public class RinhaServlet extends HttpServlet {
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
             stmt.setInt(1, id);
+            debug();
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
                 if (resp == null)

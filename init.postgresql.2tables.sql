@@ -12,9 +12,7 @@ CREATE  TABLE transacoes (
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao CHAR(10) NOT NULL,
-	realizada_em TIMESTAMP(6) NOT NULL,
-	CONSTRAINT fk_clientes_transacoes_id
-		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+	realizada_em TIMESTAMP(6) NOT NULL
 );
 
 INSERT INTO clientes (nome, limite) VALUES
@@ -23,6 +21,11 @@ INSERT INTO clientes (nome, limite) VALUES
 	('les cruders', 10000 * 100),
 	('padaria joia de cocaia', 100000 * 100),
 	('kid mais', 5000 * 100);
+
+INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+    SELECT id, 0, 'c', 'init', clock_timestamp()
+    FROM clientes;
+
 
 -- CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 -- SELECT pg_prewarm('clientes');
