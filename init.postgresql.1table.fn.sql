@@ -45,19 +45,19 @@ DECLARE
     result transacao_result;
 BEGIN
     -- PERFORM pg_try_advisory_xact_lock(42);
-    PERFORM pg_advisory_lock(p_cliente_id);
+    -- PERFORM pg_advisory_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
+    lock table transacoes in ACCESS EXCLUSIVE mode;
 
     -- invoke limite_cliente into v_limite
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
     
     SELECT saldo 
         FROM transacoes
-        WHERE id = p_cliente_id
-        ORDER BY realizada_em DESC
+        WHERE cliente_id = p_cliente_id
+        ORDER BY id DESC
         LIMIT 1
         INTO v_saldo;
 
@@ -75,7 +75,7 @@ BEGIN
                      (cliente_id,   valor,   tipo,   descricao,      realizada_em, saldo)
             VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, clock_timestamp(), v_saldo + diff);
 
-    result := (v_saldo, v_limite)::transacao_result;
+    result := (v_saldo + diff, v_limite)::transacao_result;
     RETURN result;
 EXCEPTION
     WHEN OTHERS THEN
@@ -94,11 +94,11 @@ DECLARE
     v_limite numeric;
 BEGIN
     -- PERFORM pg_try_advisory_xact_lock(42);
-    PERFORM pg_try_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
+    lock table transacoes in ACCESS EXCLUSIVE mode;
 
     SELECT saldo 
         INTO v_saldo
