@@ -1,12 +1,11 @@
--- UNLOGGED?
-CREATE  TABLE clientes (
+CREATE UNLOGGED TABLE clientes (
 	id SERIAL PRIMARY KEY,
 	nome VARCHAR(255) NOT NULL,
 	limite INTEGER NOT NULL,
 	saldo INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE  TABLE transacoes (
+CREATE UNLOGGED TABLE transacoes (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
@@ -69,15 +68,17 @@ BEGIN
     SELECT saldo 
         INTO v_saldo
         FROM clientes
-        WHERE id = p_cliente_id;
+        WHERE id = p_cliente_id
+        FOR UPDATE;
 
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;
-        IF (v_saldo + diff) < (-1 * v_limite) THEN
-            RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
-        END IF;
     ELSE
         diff := p_valor;
+    END IF;
+    
+    IF (v_saldo + diff) < (-1 * v_limite) THEN
+        RAISE 'LIMITE_INDISPONIVEL [%, %, %]', v_saldo, diff, v_limite;
     END IF;
     
     INSERT INTO transacoes 
@@ -87,7 +88,7 @@ BEGIN
     UPDATE clientes 
         SET saldo = saldo + diff 
         WHERE id = p_cliente_id
-        RETURNING saldo, limite INTO v_saldo, v_limite;
+        RETURNING saldo INTO v_saldo;
 
     result := (v_saldo, v_limite)::transacao_result;
     RETURN result;
