@@ -11,7 +11,7 @@ CREATE  TABLE transacoes (
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
-	descricao CHAR(10) NOT NULL,
+	descricao VARCHAR(10) NOT NULL,
 	realizada_em TIMESTAMP(6) NOT NULL
 );
 
@@ -56,6 +56,7 @@ DECLARE
     v_limite INT;
     result transacao_result;
 BEGIN
+    -- PERFORM pg_try_advisory_xact_lock(42);
     -- PERFORM pg_advisory_lock(p_cliente_id);
     PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
@@ -106,6 +107,7 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
+    -- PERFORM pg_try_advisory_xact_lock(42);
     PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
