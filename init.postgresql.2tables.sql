@@ -22,7 +22,7 @@ INSERT INTO clientes (nome, limite) VALUES
 	('kid mais', 5000 * 100);
 
 INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-    SELECT id, 0, 'c', 'init', clock_timestamp()
+    SELECT id, 0, 'c', 'init', now()
     FROM clientes;
 
 
@@ -83,7 +83,7 @@ BEGIN
     
     INSERT INTO transacoes 
                      (cliente_id,   valor,   tipo,   descricao,      realizada_em)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, clock_timestamp());
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now());
 
     UPDATE clientes 
         SET saldo = saldo + diff 
@@ -128,7 +128,7 @@ BEGIN
     SELECT json_build_object(
         'saldo', json_build_object(
             'total', v_saldo,
-            'data_extrato', TO_CHAR(clock_timestamp(), 'YYYY-MM-DD HH:MI:SS.US'),
+            'data_extrato', TO_CHAR(now(), 'YYYY-MM-DD HH:MI:SS.US'),
             'limite', v_limite
         ),
         'ultimas_transacoes', COALESCE((

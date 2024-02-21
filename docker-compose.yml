@@ -14,7 +14,7 @@ services:
       interval: 2s
       retries: 10
     environment:
-      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
+      - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
       - QUARKUS_HTTP_PORT=9001
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
@@ -63,7 +63,7 @@ services:
       interval: 2s
       retries: 10
     environment:
-      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
+      - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
       - QUARKUS_HTTP_PORT=9002
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
@@ -125,25 +125,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.19"
-          memory: "32MB"
-
-  warmupa:
-    hostname: warmupa
-    container_name: warmupa
-    network_mode: host 
-    image: appropriate/curl
-    command: >
-      /bin/sh -c "while true; 
-        do curl -s http://127.0.0.1:9999/clientes/1/extrato;
-           curl -s -X POST -H "Content-Type: application/json" -d '{\"valor\": 0, \"tipo\": \"c\", \"descricao\": \"warmupa\"}'  http:///localhost:9999/clientes/1/transacoes; 
-           sleep 0.05; 
-        done"
-    deploy:
-      resources: 
-        limits:
-          cpus: "0.2"
-          memory: "8MB"
+          cpus: "0.20"
+          memory: "40MB"
 
   db:
     network_mode: host
