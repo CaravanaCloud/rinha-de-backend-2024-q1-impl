@@ -5,14 +5,20 @@ CREATE UNLOGGED TABLE clientes (
 	saldo INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+    
 CREATE UNLOGGED TABLE transacoes (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
 	tipo CHAR(1) NOT NULL,
 	descricao VARCHAR(10) NOT NULL,
 	realizada_em TIMESTAMP(6) NOT NULL
 );
+
+CREATE INDEX idx_realizada_em ON transacoes (realizada_em);
+
 
 INSERT INTO clientes (nome, limite) VALUES
 	('o barato sai caro', 1000 * 100),
