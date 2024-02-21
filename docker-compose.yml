@@ -14,7 +14,7 @@ services:
       interval: 2s
       retries: 10
     environment:
-      - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
+      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
       - QUARKUS_HTTP_PORT=9001
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
@@ -63,7 +63,7 @@ services:
       interval: 2s
       retries: 10
     environment:
-      - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
+      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); select * from transacoes limit 5;
       - QUARKUS_HTTP_PORT=9002
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
@@ -158,7 +158,7 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./init.postgresql.1table.fn.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.5tables.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:

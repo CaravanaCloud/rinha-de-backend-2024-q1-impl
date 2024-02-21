@@ -31,11 +31,11 @@ import jakarta.transaction.Transactional;
 import static jakarta.transaction.Transactional.TxType.*;
 
 @WebServlet(value = "/*")
-@Transactional(Transactional.TxType.REQUIRES_NEW)
+@Transactional(REQUIRES_NEW)
 public class RinhaServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
-    private static final String WARMUP_QUERY =  "select * from clientes limit 1; select * from transacoes limit 1;";
+    private static final String WARMUP_QUERY =  "select 1+1;";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
