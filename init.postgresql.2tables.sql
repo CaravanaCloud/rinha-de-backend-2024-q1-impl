@@ -32,6 +32,19 @@ INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
 -- SELECT pg_prewarm('transacoes');
 
 
+CREATE OR REPLACE FUNCTION limite_cliente(p_cliente_id INTEGER)
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN CASE p_cliente_id
+        WHEN 1 THEN 100000
+        WHEN 2 THEN 80000
+        WHEN 3 THEN 1000000
+        WHEN 4 THEN 10000000
+        WHEN 5 THEN 500000
+        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
+    END;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TYPE transacao_result AS (saldo INT, limite INT);
 
@@ -43,15 +56,17 @@ DECLARE
     v_limite INT;
     result transacao_result;
 BEGIN
-    -- PERFORM pg_advisory_lock(p_id);
+    -- PERFORM pg_advisory_lock(p_cliente_id);
     PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_id);
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
     -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
-
-    SELECT saldo, limite
-        INTO v_saldo, v_limite
+    -- invoke limite_cliente into v_limite
+    SELECT limite_cliente(p_cliente_id) INTO v_limite;
+    
+    SELECT saldo 
+        INTO v_saldo
         FROM clientes
         WHERE id = p_cliente_id;
 
@@ -83,7 +98,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION proc_extrato(p_id integer)
+CREATE OR REPLACE FUNCTION proc_extrato(p_cliente_id int)
 RETURNS json AS $$
 DECLARE
     result json;
@@ -91,21 +106,22 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
-    PERFORM pg_try_advisory_xact_lock(p_id);
-    -- PERFORM pg_try_advisory_lock(p_id);
-    -- PERFORM pg_advisory_xact_lock(p_id);
+    PERFORM pg_try_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_try_advisory_lock(p_cliente_id);
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
     -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
-    SELECT saldo, limite
-        INTO v_saldo, v_limite
+    SELECT saldo
+        INTO v_saldo
         FROM clientes
-        WHERE id = p_id;
+        WHERE id = p_cliente_id;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_id;
+        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_cliente_id;
     END IF;
 
+    SELECT limite_cliente(p_cliente_id) INTO v_limite;
     SELECT json_build_object(
         'saldo', json_build_object(
             'total', v_saldo,
@@ -116,7 +132,7 @@ BEGIN
             SELECT json_agg(row_to_json(t)) FROM (
                 SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD HH:MI:SS.US') as realizada_em
                 FROM transacoes
-                WHERE cliente_id = p_id
+                WHERE cliente_id = p_cliente_id
                 ORDER BY realizada_em DESC
                 -- ORDER BY id DESC
                 LIMIT 10

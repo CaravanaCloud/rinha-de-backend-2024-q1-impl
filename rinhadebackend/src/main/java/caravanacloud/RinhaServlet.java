@@ -125,7 +125,7 @@ public class RinhaServlet extends HttpServlet {
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
             stmt.setInt(1, id);
-            debug();
+            // debug();
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
                 if (resp == null)
