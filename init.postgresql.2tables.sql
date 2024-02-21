@@ -12,8 +12,7 @@ CREATE UNLOGGED TABLE transacoes (
 	realizada_em TIMESTAMP(6) NOT NULL
 );
 
-CREATE INDEX idx_realizada_em ON transacoes (realizada_em);
-
+CREATE INDEX idx_cliente_id ON transacoes (cliente_id);
 
 INSERT INTO clientes(id) VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT);
 
@@ -25,21 +24,6 @@ INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 SELECT pg_prewarm('clientes');
 SELECT pg_prewarm('transacoes');
-
-
-CREATE OR REPLACE FUNCTION limite_cliente(p_cliente_id INTEGER)
-RETURNS INTEGER AS $$
-BEGIN
-    RETURN CASE p_cliente_id
-        WHEN 1 THEN 100000
-        WHEN 2 THEN 80000
-        WHEN 3 THEN 1000000
-        WHEN 4 THEN 10000000
-        WHEN 5 THEN 500000
-        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
-    END;
-END;
-$$ LANGUAGE plpgsql;
 
 CREATE TYPE json_result AS (
   status_code INT,
@@ -54,8 +38,16 @@ DECLARE
     v_limite INT;
     result json_result;
 BEGIN
-    SELECT limite_cliente(p_cliente_id) INTO v_limite;
-    
+    -- SELECT limite_cliente(p_cliente_id) INTO v_limite;
+    v_limite := CASE p_cliente_id
+        WHEN 1 THEN 100000
+        WHEN 2 THEN 80000
+        WHEN 3 THEN 1000000
+        WHEN 4 THEN 10000000
+        WHEN 5 THEN 500000
+        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
+    END;
+
     SELECT saldo 
         INTO v_saldo
         FROM clientes
@@ -113,7 +105,15 @@ BEGIN
             RETURN result;
     END IF;
 
-    SELECT limite_cliente(p_cliente_id) INTO v_limite;
+    v_limite := CASE p_cliente_id
+        WHEN 1 THEN 100000
+        WHEN 2 THEN 80000
+        WHEN 3 THEN 1000000
+        WHEN 4 THEN 10000000
+        WHEN 5 THEN 500000
+        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
+    END;
+
     SELECT json_build_object(
         'saldo', json_build_object(
             'total', v_saldo,
