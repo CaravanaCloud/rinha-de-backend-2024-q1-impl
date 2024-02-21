@@ -44,12 +44,6 @@ CREATE UNLOGGED TABLE transacoes_5 (
     saldo INTEGER NOT NULL
 );
 
--- Inserindo valores iniciais em cada tabela
-INSERT INTO transacoes_1 (valor, tipo, descricao, realizada_em, saldo) VALUES (0, 'c', 'init', clock_timestamp(), 0);
-INSERT INTO transacoes_2 (valor, tipo, descricao, realizada_em, saldo) VALUES (0, 'c', 'init', clock_timestamp(), 0);
-INSERT INTO transacoes_3 (valor, tipo, descricao, realizada_em, saldo) VALUES (0, 'c', 'init', clock_timestamp(), 0);
-INSERT INTO transacoes_4 (valor, tipo, descricao, realizada_em, saldo) VALUES (0, 'c', 'init', clock_timestamp(), 0);
-INSERT INTO transacoes_5 (valor, tipo, descricao, realizada_em, saldo) VALUES (0, 'c', 'init', clock_timestamp(), 0);
 
 -- A extensão e a função limite_cliente permanecem inalteradas
 
