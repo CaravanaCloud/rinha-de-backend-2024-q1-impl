@@ -87,7 +87,7 @@ ELSE
       SET saldo = v_saldo - valor
       WHERE id = cliente_id;
     INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-      VALUES (cliente_id, valor, tipo, descricao, now());
+      VALUES (cliente_id, valor, tipo, descricao, realizada_em);
     SET json_body = JSON_OBJECT ('saldo', v_saldo - valor, 'limite', v_limite);
     SET status_code = 200;
   END IF;
