@@ -38,12 +38,13 @@ public class ShardedServlet extends HttpServlet {
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
     private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
 
-    private static final Integer shard = envInt("RINHA_SHARD", 0);
+    private static Integer shard;
 
     @Inject
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
+        ShardedServlet.shard = envInt("RINHA_SHARD", 0);
         Log.info("Pocó ["+shard+"] 🐔💥");
         var ready = false;
         // create json node
@@ -65,13 +66,16 @@ public class ShardedServlet extends HttpServlet {
         } while (!ready);
     }
 
-    private static Integer envInt(String string, int i) {
-        var result = System.getenv(string);
+    private static Integer envInt(String varName, int defaultVal) {
+        var result = System.getenv(varName);
         if (result == null) {
-            return i;
+            Log.info("Env var " + varName + " not found, using default " + defaultVal);
+            return defaultVal;
         }
         try{
-            return Integer.valueOf(result);
+            var inte = Integer.valueOf(varName);
+            Log.info("Env var " + varName + " found, using " + result);
+            return inte;
         }catch(Exception e){
             return null;
         }
