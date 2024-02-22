@@ -5,7 +5,7 @@ CREATE table
     saldo int not null default 0
   );
 
-ALTER TABLE clientes ADD CONSTRAINT check_limite CHECK (saldo >= (limite * -1));
+-- ALTER TABLE clientes ADD CONSTRAINT check_limite CHECK (saldo >= (limite * -1));
 
 CREATE table
   transacoes (
@@ -65,33 +65,35 @@ START TRANSACTION READ WRITE;
 INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
   VALUES (cliente_id, valor, tipo, descricao, now(6));
 
-IF tipo = 'c' THEN
-  UPDATE clientes
-    SET saldo = saldo + valor
-    WHERE id = cliente_id;
-ELSE
-  UPDATE clientes
-    SET saldo = saldo - valor
-    WHERE id = cliente_id;
-END IF;
-
-
-SELECT
-  saldo,
-  limite 
+SELECT saldo, limite 
   INTO v_saldo, v_limite
   FROM clientes
-  WHERE id = cliente_id;
+  WHERE id = cliente_id
+  FOR UPDATE;
 
-SET json_body = JSON_OBJECT ('saldo', v_saldo, 'limite', v_limite);
-SET status_code = 200;
-
+IF tipo = 'c' THEN
+  UPDATE clientes
+    SET saldo = v_saldo + valor
+    WHERE id = cliente_id;
+    SET json_body = JSON_OBJECT ('saldo', v_saldo + valor, 'limite', v_limite);
+    SET status_code = 200;
+ELSE
+  IF v_saldo - valor < -1 * v_limite THEN
+    SET json_body = JSON_OBJECT ('error', 'Saldo insuficiente');
+    SET status_code = 422;
+    ROLLBACK;
+  ELSE
+    UPDATE clientes
+      SET saldo = v_saldo - valor
+      WHERE id = cliente_id;
+    SET json_body = JSON_OBJECT ('saldo', v_saldo - valor, 'limite', v_limite);
+    SET status_code = 200;
+  END IF;
+END IF;
 COMMIT;
 END$$
 
 DELIMITER $$
-
-
 CREATE PROCEDURE proc_extrato (
   IN cliente_id INT,
   OUT json_body LONGTEXT,
