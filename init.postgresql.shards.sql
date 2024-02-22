@@ -63,7 +63,6 @@ DECLARE
     result json_result;
 BEGIN
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
-    PERFORM pg_advisory_xact_lock(p_shard, p_cliente_id);
 
     -- p_shard := FLOOR(RANDOM() * 10);
     -- p_shard := p_valor % 10;
