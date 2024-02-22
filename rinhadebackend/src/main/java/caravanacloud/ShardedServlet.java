@@ -25,10 +25,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 
 @WebServlet(value = "/*")
-@Transactional //(REQUIRES_NEW)
-public class RinhaServlet extends HttpServlet {
+@Transactional
+public class ShardedServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
-    private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?)";
+    private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?, ?)";
     private static final String WARMUP_QUERY = "select 1+1;";
     private static final String valorPattern = "\"valor\":\\s*(\\d+(\\.\\d+)?)";
     private static final String tipoPattern = "\"tipo\":\\s*\"([^\"]*)\"";
@@ -38,11 +38,13 @@ public class RinhaServlet extends HttpServlet {
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
     private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
 
+    private static final Integer shard = envInt("RINHA_SHARD", 0);
+
     @Inject
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
-        Log.info("Pocó 🐔💥");
+        Log.info("Pocó ["+shard+"] 🐔💥");
         var ready = false;
         // create json node
         do {
@@ -61,6 +63,18 @@ public class RinhaServlet extends HttpServlet {
                 }
             }
         } while (!ready);
+    }
+
+    private static Integer envInt(String string, int i) {
+        var result = System.getenv(string);
+        if (result == null) {
+            return i;
+        }
+        try{
+            return Integer.valueOf(result);
+        }catch(Exception e){
+            return null;
+        }
     }
 
     private void warmup() throws SQLException{
@@ -92,8 +106,8 @@ public class RinhaServlet extends HttpServlet {
 
     private Integer getId(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         var pathInfo = req.getPathInfo();
-        // var id = pathInfo.substring(10,11);
-        var id = pathInfo.split("/")[2];
+        var id = pathInfo.substring(10,11);
+        //var id = pathInfo.split("/")[2];
         var result = Integer.valueOf(id);
         if (result <= 0 || result > 5) {
             return null;
@@ -218,10 +232,11 @@ public class RinhaServlet extends HttpServlet {
 
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
-            stmt.setInt(1, id);
-            stmt.setInt(2, valor);
-            stmt.setString(3, tipo);
-            stmt.setString(4, descricao);
+            stmt.setInt(1, shard);
+            stmt.setInt(2, id);
+            stmt.setInt(3, valor);
+            stmt.setString(4, tipo);
+            stmt.setString(5, descricao);
             stmt.execute();
             try (var rs = stmt.getResultSet()) {
                 if (rs.next()) {
