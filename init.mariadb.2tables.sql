@@ -14,19 +14,20 @@ CREATE table
     valor int not null,
     tipo varchar(1) not null,
     descricao varchar(10) not null,
-    realizada_em TIMESTAMP(6) not null default now(6),
+    realizada_em TIMESTAMP(6) not null,
     index (realizada_em DESC),
     index (cliente_id) USING HASH
   );
 
 START TRANSACTION;
+
 insert into clientes(id, limite, saldo)
 values
-  (1, 100000, 0),
-  (2, 80000, 0),
-  (3, 1000000, 0),
-  (4, 10000000, 0),
-  (5, 500000, 0);
+  (1, 1000 * 100, 0),
+  (2, 800 * 100, 0),
+  (3, 10000 * 100, 0),
+  (4, 100000 * 100, 0),
+  (5, 5000 * 100, 0);
 insert into transacoes (cliente_id, valor, tipo, descricao, realizada_em)
 values
   (1, 0, 'c', 'init', now(6)),
