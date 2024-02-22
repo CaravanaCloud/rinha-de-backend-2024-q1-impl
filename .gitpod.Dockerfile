@@ -2,7 +2,7 @@
 FROM gitpod/workspace-postgres
 
 USER root
-RUN bash -c "install-packages postgresql-client build-essential libz-dev zlib1g-dev"
+RUN bash -c "install-packages postgresql-client build-essential libz-dev zlib1g-dev mysql-client"
 RUN bash -c "apt-get update"
 
 USER gitpod

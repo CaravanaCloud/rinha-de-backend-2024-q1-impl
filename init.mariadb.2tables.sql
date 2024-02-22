@@ -29,7 +29,7 @@ values
   (5, 500000, 0);
 COMMIT;
 
-
+DELIMITER $$
 CREATE PROCEDURE proc_transacao (
   IN cliente_id int,
   IN valor int,
@@ -42,7 +42,6 @@ CREATE PROCEDURE proc_transacao (
 DECLARE v_saldo INT;
 DECLARE v_limite INT;
 DECLARE v_error_message VARCHAR(255) DEFAULT 'An error occurred during the transaction';
-
 
 DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
   GET DIAGNOSTICS CONDITION 1 v_error_message = MESSAGE_TEXT;
@@ -77,8 +76,9 @@ SET json_body = JSON_OBJECT ('saldo', v_saldo, 'limite', v_limite);
 SET status_code = 200;
 
 COMMIT;
-END;
+END$$
 
+DELIMITER $$
 CREATE PROCEDURE proc_extrato (
   IN cliente_id INT,
   OUT json_body LONGTEXT,
@@ -126,4 +126,4 @@ SET json_body = JSON_OBJECT(
 
   SET status_code = 200;
   COMMIT;
-END;
+END$$
