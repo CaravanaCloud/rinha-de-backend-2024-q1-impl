@@ -110,13 +110,9 @@ public class MariaRinhaServlet extends HttpServlet {
             var status = cstmt.getInt(3);
 
             if (resp != null && result != null) {
-                Log.infof("EXTRATO %s \n %s",id, result);
+                //Log.infof("EXTRATO %s \n %s",id, result);
                 resp.setStatus(status);
                 resp.setContentType("application/json");
-                if (! result.contains("total")){
-                    Log.error("****** TOTAL NAO ENCONTRADO NA RESPOSTA *****");
-                    throw new RuntimeException("****** TOTAL NAO ENCONTRADO NA RESPOSTA *****");
-                }
                 resp.getWriter().write(result);
             } else {
                 sendError(resp, SC_NOT_FOUND, "Extrato nao encontrado");
@@ -191,8 +187,7 @@ public class MariaRinhaServlet extends HttpServlet {
             var status = cstmt.getInt(7);
 
             if (resp != null) {
-                Log.infof("TRANSACAO %s %s %s %s %s \n %s",id,valor,tipo,descricao,realizada_em, body);
-                
+                //Log.infof("TRANSACAO %s %s %s %s %s \n %s",id,valor,tipo,descricao,realizada_em, body);
                 resp.setStatus(status);
                 resp.setContentType("application/json");
                 resp.getWriter().write(body);
@@ -203,7 +198,7 @@ public class MariaRinhaServlet extends HttpServlet {
     }
 
     private void sendError(HttpServletResponse resp, int sc, String msg) throws IOException {
-        Log.tracef("[%s] %s", sc, msg);
+        // Log.tracef("[%s] %s", sc, msg);
         if (resp != null) {
             resp.sendError(sc, msg);
         }
