@@ -70,27 +70,29 @@ SELECT saldo, limite
   WHERE id = p_cliente_id
   FOR UPDATE;
 
-
-IF tipo = 'd' THEN
-   SET v_saldo = v_saldo - valor;
-   IF (v_saldo) < (-1 * v_limite) THEN
-      SET json_body = JSON_OBJECT ('error', 'Saldo insuficiente');
-      SET status_code = 422;
-      ROLLBACK;
-    END IF;
+IF tipo = 'c' THEN
+  UPDATE clientes
+    SET saldo = v_saldo + valor
+    WHERE id = p_cliente_id;
+  INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+  VALUES (p_cliente_id, valor, tipo, descricao, now(6));
+    SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo + valor as INT), 'limite', CAST(v_limite as INT));
+    SET status_code = 200;
 ELSE
-  SET v_saldo = v_saldo + valor;
+  IF v_saldo - valor < -1 * v_limite THEN
+    SET json_body = JSON_OBJECT ('error', 'Saldo insuficiente');
+    SET status_code = 422;
+    ROLLBACK;
+  ELSE
+    UPDATE clientes
+      SET saldo = v_saldo - valor
+      WHERE id = p_cliente_id;
+    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+      VALUES (p_cliente_id, valor, tipo, descricao, now(6));
+    SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo - valor as INT), 'limite', CAST(v_limite as INT));
+    SET status_code = 200;
+  END IF;
 END IF;
-  
-UPDATE clientes
-  SET saldo = v_saldo
-  WHERE id = p_cliente_id;
-
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-    VALUES (p_cliente_id, valor, tipo, descricao, realizada_em);
-
-SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo as INT), 'limite', CAST(v_limite as INT));
-SET status_code = 200;
 COMMIT;
 END//
 
