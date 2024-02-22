@@ -38,13 +38,13 @@ public class ShardedServlet extends HttpServlet {
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
     private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
 
-    private static Integer shard;
+    private Integer shard;
 
     @Inject
     DataSource ds;
 
     public void onStartup(@Observes StartupEvent event) {
-        ShardedServlet.shard = envInt("RINHA_SHARD", 0);
+        shard = envInt("RINHA_SHARD", 0);
         Log.info("Pocó ["+shard+"] 🐔💥");
         var ready = false;
         // create json node
@@ -73,10 +73,11 @@ public class ShardedServlet extends HttpServlet {
             return defaultVal;
         }
         try{
-            var inte = Integer.valueOf(varName);
+            var inte = Integer.valueOf(result);
             Log.info("Env var " + varName + " found, using " + result);
             return inte;
         }catch(Exception e){
+            e.printStackTrace();
             return null;
         }
     }
@@ -112,8 +113,8 @@ public class ShardedServlet extends HttpServlet {
         var pathInfo = req.getPathInfo();
         var id = pathInfo.substring(10,11);
         //var id = pathInfo.split("/")[2];
-        var result = Integer.valueOf(id);
-        if (result <= 0 || result > 5) {
+        var validId = "1".equals(id) || "2".equals(id) || "3".equals(id) || "4".equals(id) || "5".equals(id);
+        if (! validId) {
             return null;
         }
         return Integer.valueOf(id);
