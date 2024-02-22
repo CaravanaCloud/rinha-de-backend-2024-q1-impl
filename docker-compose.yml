@@ -19,9 +19,9 @@ services:
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mariadb://127.0.0.1:5400/rinha
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=12
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=12
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=12
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=20
       - QUARKUS_DATASOURCE_JDBC_TRANSACTIONS=disabled
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -46,7 +46,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "80MB"
 
   api02:
@@ -67,9 +67,9 @@ services:
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mariadb://127.0.0.1:5400/rinha
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=12
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=12
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=12
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=20
       - QUARKUS_DATASOURCE_JDBC_TRANSACTIONS=disabled
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -94,7 +94,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "80MB"
 
   nginx:
@@ -123,7 +123,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "40MB"
 
   db:
@@ -142,12 +142,11 @@ services:
       - "5400"
     volumes:
       - ./init.mariadb.2tables.sql:/docker-entrypoint-initdb.d/init.sql
-      # Custom MariaDB config (if needed), adjust the source path as necessary
       - ./my.cnf:/etc/mysql/my.cnf
     deploy:
       resources: 
         limits:
-          cpus: "0.75"
+          cpus: "0.9"
           memory: "350MB"
     healthcheck:
       # test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "rinha","-P" , "5400", "--password=123"]
