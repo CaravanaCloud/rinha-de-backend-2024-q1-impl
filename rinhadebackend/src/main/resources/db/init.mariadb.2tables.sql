@@ -40,7 +40,7 @@ values
 COMMIT;
 
 CREATE PROCEDURE proc_transacao (
-  IN cliente_id int,
+  IN p_cliente_id int,
   IN valor int,
   IN tipo varchar(1),
   IN descricao varchar(10),
@@ -66,15 +66,15 @@ START TRANSACTION READ WRITE;
 SELECT saldo, limite 
   INTO v_saldo, v_limite
   FROM clientes
-  WHERE id = cliente_id
+  WHERE id = p_cliente_id
   FOR UPDATE;
 
 IF tipo = 'c' THEN
   UPDATE clientes
     SET saldo = v_saldo + valor
-    WHERE id = cliente_id;
+    WHERE id = p_cliente_id;
   INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, now(6));
+  VALUES (p_cliente_id, valor, tipo, descricao, now(6));
     SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo + valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
 ELSE
@@ -85,9 +85,9 @@ ELSE
   ELSE
     UPDATE clientes
       SET saldo = v_saldo - valor
-      WHERE id = cliente_id;
+      WHERE id = p_cliente_id;
     INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-      VALUES (cliente_id, valor, tipo, descricao, now(6));
+      VALUES (p_cliente_id, valor, tipo, descricao, now(6));
     SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo - valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
   END IF;
@@ -110,7 +110,7 @@ START TRANSACTION READ ONLY;
 SELECT saldo, limite 
   INTO v_saldo, v_limit
   FROM clientes
-  WHERE id = cliente_id;
+  WHERE id = p_cliente_id;
 
 SET json_body = JSON_OBJECT(
     'saldo', JSON_OBJECT(
