@@ -6,14 +6,15 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.sql.DataSource;
+import javax.sql.*;
+import java.time.*;
+
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
@@ -30,7 +31,7 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class MariaRinhaServlet extends HttpServlet {
     private static final String EXTRATO_CALL = "{CALL proc_extrato(?, ?, ?)}";
-    private static final String TRANSACAO_CALL = "{CALL proc_transacao(?, ?, ?, ?, ?, ?)}";
+    private static final String TRANSACAO_CALL = "{CALL proc_transacao(?, ?, ?, ?, ?, ?, ?)}";
     private static final String WARMUP_QUERY = "SELECT 1+1";
     private static final String valorPattern = "\"valor\":\\s*(\\d+(\\.\\d+)?)";
     private static final String tipoPattern = "\"tipo\":\\s*\"([^\"]*)\"";
@@ -109,8 +110,13 @@ public class MariaRinhaServlet extends HttpServlet {
             var status = cstmt.getInt(3);
 
             if (resp != null && result != null) {
+                Log.infof("EXTRATO %s \n %s",id, result);
                 resp.setStatus(status);
                 resp.setContentType("application/json");
+                if (! result.contains("total")){
+                    Log.error("****** TOTAL NAO ENCONTRADO NA RESPOSTA *****");
+                    throw new RuntimeException("****** TOTAL NAO ENCONTRADO NA RESPOSTA *****");
+                }
                 resp.getWriter().write(result);
             } else {
                 sendError(resp, SC_NOT_FOUND, "Extrato nao encontrado");
@@ -171,18 +177,21 @@ public class MariaRinhaServlet extends HttpServlet {
              var cstmt = conn.prepareCall(TRANSACAO_CALL)) {
             //conn.setAutoCommit(false);
             //conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            var realizada_em = Timestamp.valueOf(LocalDateTime.now());
             cstmt.setInt(1, id);
             cstmt.setInt(2, valor);
             cstmt.setString(3, tipo);
             cstmt.setString(4, descricao);
-            cstmt.registerOutParameter(5, Types.VARCHAR); // For the JSON body
-            cstmt.registerOutParameter(6, Types.INTEGER); // For the status code
+            cstmt.setTimestamp(5, realizada_em);
+            cstmt.registerOutParameter(6, Types.VARCHAR); // For the JSON body
+            cstmt.registerOutParameter(7, Types.INTEGER); // For the status code
             cstmt.execute();
 
-            var body = cstmt.getString(5);
-            var status = cstmt.getInt(6);
+            var body = cstmt.getString(6);
+            var status = cstmt.getInt(7);
 
             if (resp != null) {
+                Log.infof("TRANSACAO %s %s %s %s %s \n %s",id,valor,tipo,descricao,realizada_em, body);
                 resp.setStatus(status);
                 resp.setContentType("application/json");
                 resp.getWriter().write(body);

@@ -44,7 +44,8 @@ CREATE PROCEDURE proc_transacao (
   IN valor int,
   IN tipo varchar(1),
   IN descricao varchar(10),
-  OUT json_body LONGTEXT,
+  IN realizada_em TIMESTAMP(6),
+  OUT json_body TEXT,
   OUT status_code INT
 ) BEGIN 
 
@@ -64,7 +65,7 @@ START TRANSACTION READ WRITE;
 
 
 INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, now(6));
+  VALUES (cliente_id, valor, tipo, descricao, realizada_em);
 
 SELECT saldo, limite 
   INTO v_saldo, v_limite
@@ -97,7 +98,7 @@ END$$
 DELIMITER $$
 CREATE PROCEDURE proc_extrato (
   IN cliente_id INT,
-  OUT json_body LONGTEXT,
+  OUT json_body TEXT,
   OUT status_code INT
 ) BEGIN 
 

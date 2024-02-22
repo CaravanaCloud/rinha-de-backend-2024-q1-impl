@@ -5,7 +5,7 @@ CREATE table
     saldo int not null default 0
   );
 
-ALTER TABLE clientes ADD CONSTRAINT check_limite CHECK (saldo >= (limite * -1));
+-- ALTER TABLE clientes ADD CONSTRAINT check_limite CHECK (saldo >= (limite * -1));
 
 CREATE table
   transacoes (
@@ -14,28 +14,38 @@ CREATE table
     valor int not null,
     tipo varchar(1) not null,
     descricao varchar(10) not null,
-    realizada_em TIMESTAMP(6) not null default now(6),
+    realizada_em DATETIME(6) not null,
     index (realizada_em DESC),
     index (cliente_id) USING HASH
   );
 
 START TRANSACTION;
-insert into clientes
-values
-  (1, 100000, 0),
-  (2, 80000, 0),
-  (3, 1000000, 0),
-  (4, 10000000, 0),
-  (5, 500000, 0);
-COMMIT;
 
+insert into clientes(id, limite, saldo)
+values
+  (1, 1000 * 100, 0),
+  (2, 800 * 100, 0),
+  (3, 10000 * 100, 0),
+  (4, 100000 * 100, 0),
+  (5, 5000 * 100, 0);
+
+-- insert into transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+-- values
+--  (1, 0, 'c', 'init', now(6)),
+--  (2, 0, 'c', 'init', now(6)),
+--  (3, 0, 'c', 'init', now(6)),
+--  (4, 0, 'c', 'init', now(6)),
+--  (5, 0, 'c', 'init', now(6));
+
+COMMIT;
 
 CREATE PROCEDURE proc_transacao (
   IN cliente_id int,
   IN valor int,
   IN tipo varchar(1),
   IN descricao varchar(10),
-  OUT json_body LONGTEXT,
+  IN realizada_em TIMESTAMP(6),
+  OUT json_body TEXT,
   OUT status_code INT
 ) BEGIN 
 
@@ -43,52 +53,58 @@ DECLARE v_saldo INT;
 DECLARE v_limite INT;
 DECLARE v_error_message VARCHAR(255) DEFAULT 'An error occurred during the transaction';
 
-
 DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
   GET DIAGNOSTICS CONDITION 1 v_error_message = MESSAGE_TEXT;
   SET json_body = JSON_OBJECT ('error', v_error_message);
   SET status_code = 422;
   ROLLBACK;
 END;
+
 SET autocommit=0;
 START TRANSACTION READ WRITE;
 
+INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+  VALUES (cliente_id, valor, tipo, descricao, realizada_em);
+
+SELECT saldo, limite 
+  INTO v_saldo, v_limite
+  FROM clientes
+  WHERE id = cliente_id
+  FOR UPDATE;
+
 IF tipo = 'c' THEN
   UPDATE clientes
-    SET saldo = saldo + valor
+    SET saldo = v_saldo + valor
     WHERE id = cliente_id;
+    SET json_body = JSON_OBJECT ('saldo', v_saldo + valor, 'limite', v_limite);
+    SET status_code = 200;
 ELSE
-  UPDATE clientes
-    SET saldo = saldo - valor
-    WHERE id = cliente_id;
+  IF v_saldo - valor < -1 * v_limite THEN
+    SET json_body = JSON_OBJECT ('error', 'Saldo insuficiente');
+    SET status_code = 422;
+    ROLLBACK;
+  ELSE
+    UPDATE clientes
+      SET saldo = v_saldo - valor
+      WHERE id = cliente_id;
+    SET json_body = JSON_OBJECT ('saldo', v_saldo - valor, 'limite', v_limite);
+    SET status_code = 200;
+  END IF;
 END IF;
-
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, now(6));
-
-SELECT
-  saldo,
-  limite INTO v_saldo,
-  v_limite
-  FROM clientes
-  WHERE id = cliente_id;
-
-SET json_body = JSON_OBJECT ('saldo', v_saldo, 'limite', v_limite);
-SET status_code = 200;
-
 COMMIT;
 END;
 
 CREATE PROCEDURE proc_extrato (
   IN cliente_id INT,
-  OUT json_body LONGTEXT,
+  OUT json_body TEXT,
   OUT status_code INT
 ) BEGIN 
 
 DECLARE v_saldo INT DEFAULT 0;
 DECLARE v_limit INT DEFAULT -1;
+
 SET autocommit=0;
-START TRANSACTION WITH CONSISTENT SNAPSHOT;
+START TRANSACTION READ;
 
 SELECT saldo, limite 
   INTO v_saldo, v_limit
