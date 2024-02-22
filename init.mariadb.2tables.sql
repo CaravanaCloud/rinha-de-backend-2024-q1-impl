@@ -57,8 +57,13 @@ DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
   SET status_code = 422;
   ROLLBACK;
 END;
+
 SET autocommit=0;
 START TRANSACTION READ WRITE;
+
+
+INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+  VALUES (cliente_id, valor, tipo, descricao, now(6));
 
 IF tipo = 'c' THEN
   UPDATE clientes
@@ -70,13 +75,11 @@ ELSE
     WHERE id = cliente_id;
 END IF;
 
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, now(6));
 
 SELECT
   saldo,
-  limite INTO v_saldo,
-  v_limite
+  limite 
+  INTO v_saldo, v_limite
   FROM clientes
   WHERE id = cliente_id;
 
@@ -87,6 +90,8 @@ COMMIT;
 END$$
 
 DELIMITER $$
+
+
 CREATE PROCEDURE proc_extrato (
   IN cliente_id INT,
   OUT json_body LONGTEXT,
@@ -95,6 +100,7 @@ CREATE PROCEDURE proc_extrato (
 
 DECLARE v_saldo INT DEFAULT 0;
 DECLARE v_limit INT DEFAULT -1;
+
 SET autocommit=0;
 START TRANSACTION WITH CONSISTENT SNAPSHOT;
 
