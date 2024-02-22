@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:dev
+    image: caravanacloud/rinhadebackend-native:mariadb
     hostname: api01
     container_name: api01
     depends_on:
@@ -51,7 +51,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:dev
+    image: caravanacloud/rinhadebackend-native:mariadb
     hostname: api02
     container_name: api02
     depends_on:

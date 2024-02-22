@@ -36,7 +36,7 @@ BEGIN
         WHEN 3 THEN 1000000
         WHEN 4 THEN 10000000
         WHEN 5 THEN 500000
-        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
+        ELSE -1
     END;
 END;
 $$ LANGUAGE plpgsql;

@@ -1,0 +1,1 @@
+mysql -h127.0.0.1 -urinha -p123 -P5400 rinha
