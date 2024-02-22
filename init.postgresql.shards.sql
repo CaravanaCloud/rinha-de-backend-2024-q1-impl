@@ -61,13 +61,11 @@ DECLARE
     v_limite INT;
     v_sum INT;
     result json_result;
-    p_shard INT;
 BEGIN
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
 
-    -- m_shard := p_valor % 10
-    -- SELECT FLOOR(RAND() * 10) into p_shard;
-    p_shard := FLOOR(RANDOM() * 10);
+    -- p_shard := FLOOR(RANDOM() * 10);
+    -- p_shard := p_valor % 10;
 
     SELECT saldo
         INTO v_saldo
