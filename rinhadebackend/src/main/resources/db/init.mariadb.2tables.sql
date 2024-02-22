@@ -75,7 +75,7 @@ IF tipo = 'c' THEN
     WHERE id = cliente_id;
   INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
   VALUES (cliente_id, valor, tipo, descricao, realizada_em);
-    SET json_body = JSON_OBJECT ('saldo', v_saldo + valor, 'limite', v_limite);
+    SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo + valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
 ELSE
   IF v_saldo - valor < -1 * v_limite THEN
@@ -88,7 +88,7 @@ ELSE
       WHERE id = cliente_id;
     INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
       VALUES (cliente_id, valor, tipo, descricao, realizada_em);
-    SET json_body = JSON_OBJECT ('saldo', v_saldo - valor, 'limite', v_limite);
+    SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo - valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
   END IF;
 END IF;
@@ -114,15 +114,15 @@ SELECT saldo, limite
 
 SET json_body = JSON_OBJECT(
     'saldo', JSON_OBJECT(
-        'total', v_saldo,
-        'limite', v_limit,
+        'total', CAST(v_saldo as INT),
+        'limite', CAST(v_limit as INT),
         'data_extrato', DATE_FORMAT(NOW(6), '%Y-%m-%d %H:%i:%s.%f')
     ),
     'ultimas_transacoes', (
         SELECT IFNULL(
             JSON_ARRAYAGG(
                 JSON_OBJECT(
-                    'valor', valor,
+                    'valor', CAST(valor as INT),
                     'tipo', tipo,
                     'descricao', descricao,
                     'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%d %H:%i:%s.%f')
