@@ -192,6 +192,7 @@ public class MariaRinhaServlet extends HttpServlet {
 
             if (resp != null) {
                 Log.infof("TRANSACAO %s %s %s %s %s \n %s",id,valor,tipo,descricao,realizada_em, body);
+                
                 resp.setStatus(status);
                 resp.setContentType("application/json");
                 resp.getWriter().write(body);

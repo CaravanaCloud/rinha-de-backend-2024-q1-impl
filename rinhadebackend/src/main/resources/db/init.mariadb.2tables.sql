@@ -104,7 +104,7 @@ DECLARE v_saldo INT DEFAULT 0;
 DECLARE v_limit INT DEFAULT -1;
 
 SET autocommit=0;
-START TRANSACTION READ;
+START TRANSACTION READ ONLY;
 
 SELECT saldo, limite 
   INTO v_saldo, v_limit
@@ -124,7 +124,7 @@ SET json_body = JSON_OBJECT(
                     'valor', valor,
                     'tipo', tipo,
                     'descricao', descricao,
-                    'data', DATE_FORMAT(realizada_em, '%Y-%m-%d %H:%i:%s.%f')
+                    'realizada_em', DATE_FORMAT(realizada_em, '%Y-%m-%d %H:%i:%s.%f')
                 )
             ),
             JSON_ARRAY()
