@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
@@ -43,9 +44,13 @@ public class ShardedServlet extends HttpServlet {
     @Inject
     DataSource ds;
 
+    @PostConstruct
+    public void init(){
+        this.shard = envInt("RINHA_SHARD", 0);
+        Log.info("PostConstruct shard["+shard+"] 🐔💥");
+    }
     public void onStartup(@Observes StartupEvent event) {
-        shard = envInt("RINHA_SHARD", 0);
-        Log.info("Pocó ["+shard+"] 🐔💥");
+        Log.info("StartupEvent shard["+shard+"] 🐔💥");
         var ready = false;
         // create json node
         do {
@@ -237,7 +242,11 @@ public class ShardedServlet extends HttpServlet {
 
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
-            stmt.setInt(1, shard);
+            if (this.shard == null){
+                Log.warn("USING DEFAULT SHARD");
+                this.shard = 0;
+            }
+            stmt.setInt(1, this.shard);
             stmt.setInt(2, id);
             stmt.setInt(3, valor);
             stmt.setString(4, tipo);
@@ -250,6 +259,7 @@ public class ShardedServlet extends HttpServlet {
                     if (resp == null)
                         return;
                     resp.setStatus(status);
+                    resp.setHeader("x-rinha-shard", this.shard.toString());
                     resp.setContentType("application/json");
                     resp.setCharacterEncoding("UTF-8");
                     resp.getWriter().write(body);
@@ -260,6 +270,7 @@ public class ShardedServlet extends HttpServlet {
         } catch (SQLException e) {
             handleSQLException(e, resp);
         } catch (Exception e) {
+            e.printStackTrace();
             sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao " + e.getMessage());
         }
     }

@@ -1,0 +1,58 @@
+# docker compose down; docker compose -f docker-compose.dev.yml up 
+version: "3.9"
+
+services:
+ 
+  nginx:
+    hostname: lb
+    container_name: lb
+    network_mode: host 
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+    ports:
+      - "9999:9999"
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    healthcheck:
+      # test: ["CMD", "curl", "-f", "http://127.0.0.1:9999/clientes/1/extrato"]
+      test: ["CMD", "sleep", "5"]
+      interval: 3s
+      retries: 15
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "40MB"
+
+  db:
+    network_mode: host
+    image: postgres:latest
+    hostname: db
+    container_name: db
+    environment:
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_USER=rinha
+      - POSTGRES_DB=rinha
+    ports:
+      - "5400:5400"
+    expose:
+      - "5400"
+    volumes:
+      - ./rinhadebackend/src/main/resources/db/init.postgresql.shards.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
+    deploy:
+      resources: 
+        limits:
+          cpus: "0.75"
+          memory: "350MB"
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 3s
