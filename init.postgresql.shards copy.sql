@@ -19,15 +19,7 @@ CREATE INDEX idx_realizada_em ON transacoes (realizada_em);
 
 INSERT INTO clientes(id, saldo, shard) VALUES 
     (1,0,0), (2,0,0), (3,0,0), (4,0,0), (5,0,0),
-    (1,0,1), (2,0,1), (3,0,1), (4,0,1), (5,0,1),
-    (1,0,2), (2,0,2), (3,0,2), (4,0,2), (5,0,2),
-    (1,0,3), (2,0,3), (3,0,3), (4,0,3), (5,0,3),
-    (1,0,4), (2,0,4), (3,0,4), (4,0,4), (5,0,4),
-    (1,0,5), (2,0,5), (3,0,5), (4,0,5), (5,0,5),
-    (1,0,6), (2,0,6), (3,0,6), (4,0,6), (5,0,6),
-    (1,0,7), (2,0,7), (3,0,7), (4,0,7), (5,0,7),
-    (1,0,8), (2,0,8), (3,0,8), (4,0,8), (5,0,8),
-    (1,0,9), (2,0,9), (3,0,9), (4,0,9), (5,0,9);
+    (1,0,1), (2,0,1), (3,0,1), (4,0,1), (5,0,1);
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 SELECT pg_prewarm('clientes');
@@ -53,7 +45,7 @@ CREATE TYPE json_result AS (
   body json
 );
 
-CREATE OR REPLACE FUNCTION proc_transacao(pp_shard INT, p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
+CREATE OR REPLACE FUNCTION proc_transacao(p_shard INT, p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
 RETURNS json_result as $$
 DECLARE
     diff INT;
@@ -61,11 +53,10 @@ DECLARE
     v_limite INT;
     v_sum INT;
     result json_result;
-    p_shard INT;
 BEGIN
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
 
-    p_shard := p_valor % 10;
+    -- m_shard := p_valor % 10
     
     SELECT saldo
         INTO v_saldo
