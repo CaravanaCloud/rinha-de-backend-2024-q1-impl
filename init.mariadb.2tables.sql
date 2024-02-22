@@ -63,10 +63,6 @@ END;
 SET autocommit=0;
 START TRANSACTION READ WRITE;
 
-
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, realizada_em);
-
 SELECT saldo, limite 
   INTO v_saldo, v_limite
   FROM clientes
@@ -79,6 +75,8 @@ IF tipo = 'c' THEN
     WHERE id = cliente_id;
     SET json_body = JSON_OBJECT ('saldo', v_saldo + valor, 'limite', v_limite);
     SET status_code = 200;
+  INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+    VALUES (cliente_id, valor, tipo, descricao, realizada_em);
 ELSE
   IF v_saldo - valor < -1 * v_limite THEN
     SET json_body = JSON_OBJECT ('error', 'Saldo insuficiente');
@@ -88,6 +86,8 @@ ELSE
     UPDATE clientes
       SET saldo = v_saldo - valor
       WHERE id = cliente_id;
+    INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+    VALUES (cliente_id, valor, tipo, descricao, realizada_em)
     SET json_body = JSON_OBJECT ('saldo', v_saldo - valor, 'limite', v_limite);
     SET status_code = 200;
   END IF;
