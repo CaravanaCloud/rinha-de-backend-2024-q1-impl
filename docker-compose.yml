@@ -19,9 +19,9 @@ services:
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mariadb://127.0.0.1:5400/rinha
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=20
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=20
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=10
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=10
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=10
       - QUARKUS_DATASOURCE_JDBC_TRANSACTIONS=disabled
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "80MB"
+          memory: "100MB"
 
   api02:
     network_mode: host
@@ -67,9 +67,9 @@ services:
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mariadb://127.0.0.1:5400/rinha
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=20
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=20
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=20
+      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=10
+      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=10
+      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=10
       - QUARKUS_DATASOURCE_JDBC_TRANSACTIONS=disabled
       - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
       - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
@@ -95,7 +95,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "80MB"
+          memory: "100MB"
 
   nginx:
     hostname: lb
@@ -146,8 +146,8 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.9"
-          memory: "350MB"
+          cpus: "0.90"
+          memory: "310MB"
     healthcheck:
       # test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "rinha","-P" , "5400", "--password=123"]
       test: ["CMD", "sleep", "5"]
