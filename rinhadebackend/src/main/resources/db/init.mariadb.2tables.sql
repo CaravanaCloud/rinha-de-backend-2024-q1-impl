@@ -74,7 +74,7 @@ IF tipo = 'c' THEN
     SET saldo = v_saldo + valor
     WHERE id = cliente_id;
   INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-  VALUES (cliente_id, valor, tipo, descricao, realizada_em);
+  VALUES (cliente_id, valor, tipo, descricao, now(6));
     SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo + valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
 ELSE
@@ -87,7 +87,7 @@ ELSE
       SET saldo = v_saldo - valor
       WHERE id = cliente_id;
     INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em)
-      VALUES (cliente_id, valor, tipo, descricao, realizada_em);
+      VALUES (cliente_id, valor, tipo, descricao, now(6));
     SET json_body = JSON_OBJECT ('saldo', CAST(v_saldo - valor as INT), 'limite', CAST(v_limite as INT));
     SET status_code = 200;
   END IF;
@@ -96,7 +96,7 @@ COMMIT;
 END;
 
 CREATE PROCEDURE proc_extrato (
-  IN cliente_id INT,
+  IN p_cliente_id INT,
   OUT json_body TEXT,
   OUT status_code INT
 ) BEGIN 
@@ -133,7 +133,7 @@ SET json_body = JSON_OBJECT(
         FROM (
             SELECT valor, tipo, descricao, realizada_em
             FROM transacoes
-            WHERE cliente_id = cliente_id
+            WHERE cliente_id = p_cliente_id
             ORDER BY realizada_em DESC
             LIMIT 10
         ) AS limited_transacoes
