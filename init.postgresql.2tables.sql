@@ -26,7 +26,7 @@ CREATE TYPE json_result AS (
   body json
 );
 
-CREATE OR REPLACE FUNCTION proc_transacao(p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
+CREATE OR REPLACE FUNCTION proc_transacao(p_shard INT, p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
 RETURNS json_result as $$
 DECLARE
     diff INT;
