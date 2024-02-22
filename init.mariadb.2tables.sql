@@ -20,13 +20,21 @@ CREATE table
   );
 
 START TRANSACTION;
-insert into clientes
+insert into clientes(id, limite, saldo)
 values
   (1, 100000, 0),
   (2, 80000, 0),
   (3, 1000000, 0),
   (4, 10000000, 0),
   (5, 500000, 0);
+insert into transacoes (cliente_id, valor, tipo, descricao, realizada_em)
+values
+  (1, 0, 'c', 'init', now(6)),
+  (2, 0, 'c', 'init', now(6)),
+  (3, 0, 'c', 'init', now(6)),
+  (4, 0, 'c', 'init', now(6)),
+  (5, 0, 'c', 'init', now(6));
+
 COMMIT;
 
 DELIMITER $$
