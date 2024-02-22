@@ -53,7 +53,7 @@ CREATE TYPE json_result AS (
   body json
 );
 
-CREATE OR REPLACE FUNCTION proc_transacao(pp_shard INT, p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
+CREATE OR REPLACE FUNCTION proc_transacao(p_shard INT, p_cliente_id INT, p_valor INT, p_tipo CHAR, p_descricao CHAR(10))
 RETURNS json_result as $$
 DECLARE
     diff INT;
@@ -65,8 +65,10 @@ DECLARE
 BEGIN
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
 
-    p_shard := p_valor % 10;
-    
+    -- m_shard := p_valor % 10
+    -- SELECT FLOOR(RAND() * 10) into p_shard;
+    p_shard := FLOOR(RANDOM() * 10);
+
     SELECT saldo
         INTO v_saldo
         FROM clientes
