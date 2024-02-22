@@ -19,8 +19,7 @@ CREATE table
     index (cliente_id) USING HASH
   );
 
-insert into
-  clientes
+insert into clientes
 values
   (1, 100000, 0),
   (2, 80000, 0),
@@ -90,38 +89,39 @@ DECLARE v_limit INT DEFAULT -1;
 SET autocommit=0;
 START TRANSACTION READ ONLY;
 
-SELECT
-  saldo,
-  limite INTO v_saldo,
-  v_limit
+SELECT saldo, limite 
+  INTO v_saldo, v_limit
   FROM clientes
   WHERE id = cliente_id;
 
-SET json_body = JSON_OBJECT (
-    'saldo', JSON_OBJECT (
-      'total', v_saldo,
-      'limite', v_limit,
-      'data_extrato', DATE_FORMAT (NOW (6), '%Y-%m-%d %H:%i:%s.%f')
+SET json_body = JSON_OBJECT(
+    'saldo', JSON_OBJECT(
+        'total', v_saldo,
+        'limite', v_limit,
+        'data_extrato', DATE_FORMAT(NOW(6), '%Y-%m-%d %H:%i:%s.%f')
     ),
-    'ultimas_transacoes',
-    (
-      SELECT IFNULL ( 
-        JSON_ARRAYAGG (
-            JSON_OBJECT (
-              'valor', valor,
-              'tipo', tipo,
-              'descricao', descricao,
-              'data', DATE_FORMAT (realizada_em, '%Y-%m-%d %H:%i:%s.%f')
-            )
-          ),
-          JSON_ARRAY ()
+    'ultimas_transacoes', (
+        SELECT IFNULL(
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'valor', valor,
+                    'tipo', tipo,
+                    'descricao', descricao,
+                    'data', DATE_FORMAT(realizada_em, '%Y-%m-%d %H:%i:%s.%f')
+                )
+            ),
+            JSON_ARRAY()
         )
-      FROM transacoes
-      WHERE cliente_id = cliente_id
-      ORDER BY realizada_em DESC
-      LIMIT 10
+        FROM (
+            SELECT valor, tipo, descricao, realizada_em
+            FROM transacoes
+            WHERE cliente_id = cliente_id
+            ORDER BY realizada_em DESC
+            LIMIT 10
+        ) AS limited_transacoes
     )
-  );
+);
+
 
   SET status_code = 200;
   COMMIT;
