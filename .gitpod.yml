@@ -56,6 +56,7 @@ vscode:
     - redhat.fabric8-analytics
     - ms-azuretools.vscode-docker
     - gatling.gatling
+    - ms-azuretools.vscode-docker
 
 additionalRepositories:
   - url: https://github.com/zanfranceschi/rinha-de-backend-2024-q1
