@@ -22,10 +22,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
+import org.infinispan.Cache;
 
 @WebServlet(value = "/*")
-@Transactional
+@Transactional(Transactional.TxType.NEVER)
 public class CachedServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?, ?)";
@@ -42,6 +44,9 @@ public class CachedServlet extends HttpServlet {
 
     @Inject
     DataSource ds;
+
+    @Inject
+    Cache<Integer, Cliente> cache;
 
     @PostConstruct
     public void init(){
@@ -104,7 +109,7 @@ public class CachedServlet extends HttpServlet {
 
     // curl -v -X GET http://localhost:9999/clientes/1/extrato
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected synchronized void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id != null) {
             processExtrato(id, resp);
@@ -124,38 +129,34 @@ public class CachedServlet extends HttpServlet {
         return Integer.valueOf(id);
     }
 
-    private void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
-            stmt.setInt(1, id);
-            // debug();
-            stmt.execute();
-            try (var rs = stmt.getResultSet()) {
-                if (resp == null)
-                    return;
-                if (rs.next()) {
-                    var result = rs.getString("body");
-                    var status = rs.getInt("status_code");
-                    resp.setStatus(status);
-                    resp.setContentType("application/json");
-                    resp.getWriter().write(result);
-                } else {
-                    sendError(resp, SC_NOT_FOUND, "Extrato nao encontrado");
-                }
+    private  void processExtrato(Integer id, HttpServletResponse resp) throws IOException {
+        var acache = cache.getAdvancedCache();
+        var tm = acache.getTransactionManager();
+        try {
+            tm.begin();
+            acache.lock(id);
+            var cliente = cache.get(id);
+            if (resp != null){
+                resp.setStatus(200);
+                resp.setHeader("x-rinha-shard", this.shard.toString());
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
+                resp.getWriter().write(cliente.toExtrato());
+                resp.getWriter().flush();
+                resp.flushBuffer();
             }
-        } catch (SQLException e) {
-            var msg = e.getMessage();
-            if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
-            } else {
-                e.printStackTrace();
-                sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao" + e.getMessage());
+            tm.commit();
+        }catch (Exception e) {
+            try {
+                tm.rollback();
+            }catch (SystemException ex){
+                Log.errorf("TRANSACTION ERRROR %S", ex.getMessage());
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao: " + e.getMessage());
+            Log.errorf("CACHING ERROR %s", e.getMessage());
         }
     }
+
+
 
     private void sendError(HttpServletResponse resp, int sc, String msg) throws IOException {
         if (sc == 500)
@@ -170,7 +171,7 @@ public class CachedServlet extends HttpServlet {
     // "tipo": "c", "descricao": "Deposito"}'
     // http:///localhost:9999/clientes/1/transacoes
     @Override
-    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public synchronized void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id == null) {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
@@ -238,39 +239,34 @@ public class CachedServlet extends HttpServlet {
                 sendError(resp, 422, "Descricao invalida");
             return;
         }
-
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
-            if (this.shard == null){
-                Log.warn("USING DEFAULT SHARD");
-                this.shard = 0;
+        var acache = cache.getAdvancedCache();
+        var tm = acache.getTransactionManager();
+        try {
+            tm.begin();
+            acache.lock(id);
+            var cliente = cache.get(id);
+            if (cliente == null){
+                cliente = Cliente.of(shard, id, "Cliente "+id, 0, Cliente.limiteOf(id), null);
             }
-            stmt.setInt(1, this.shard);
-            stmt.setInt(2, id);
-            stmt.setInt(3, valor);
-            stmt.setString(4, tipo);
-            stmt.setString(5, descricao);
-            stmt.execute();
-            try (var rs = stmt.getResultSet()) {
-                if (rs.next()) {
-                    var body = rs.getString("body");
-                    var status = rs.getInt("status_code");
-                    if (resp == null)
-                        return;
-                    resp.setStatus(status);
-                    resp.setHeader("x-rinha-shard", this.shard.toString());
-                    resp.setContentType("application/json");
-                    resp.setCharacterEncoding("UTF-8");
-                    resp.getWriter().write(body);
-                } else {
-                    sendError(resp, SC_INTERNAL_SERVER_ERROR, "No next result from transacao query");
-                }
+            var status = cliente.transacao(valor, tipo, descricao);
+            cache.put(id, cliente);
+            if (resp != null){
+                resp.setStatus(status);
+                resp.setHeader("x-rinha-shard", this.shard.toString());
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
+                resp.getWriter().write(cliente.toTransacao());
+                resp.getWriter().flush();
+                resp.flushBuffer();
             }
-        } catch (SQLException e) {
-            handleSQLException(e, resp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao " + e.getMessage());
+            tm.commit();
+        }catch (Exception e) {
+            try {
+                tm.rollback();
+            }catch (SystemException ex){
+                Log.errorf("TRANSACTION ERRROR %S", ex.getMessage());
+            }
+            Log.errorf("CACHING ERROR %s", e.getMessage());
         }
     }
 
