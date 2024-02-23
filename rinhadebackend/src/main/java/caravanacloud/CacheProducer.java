@@ -40,7 +40,7 @@ public class CacheProducer {
         global= GlobalConfigurationBuilder.defaultClusteredBuilder();
         global.serialization().marshaller(new org.infinispan.commons.marshall.JavaSerializationMarshaller());
         global.serialization().allowList()
-                .addClasses(Cliente.class, Transacao.class, LinkedList.class, TreeSet.class, PriorityQueue.class);
+                .addClasses(Cliente.class, Transacao.class, LinkedList.class, TreeSet.class, PriorityQueue.class, TransacaoComparator.class);
 
         cacheManager = new DefaultCacheManager(global.build());
 
