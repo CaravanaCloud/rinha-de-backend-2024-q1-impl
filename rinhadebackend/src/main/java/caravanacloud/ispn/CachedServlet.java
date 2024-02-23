@@ -7,15 +7,20 @@ import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -25,6 +30,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transactional;
 import org.infinispan.Cache;
+import org.infinispan.commons.api.CacheContainerAdmin;
+import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
 
 @WebServlet(value = "/*")
 @Transactional(Transactional.TxType.NEVER)
@@ -40,18 +52,59 @@ public class CachedServlet extends HttpServlet {
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
     private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
 
-    private Integer shard;
-
     @Inject
     DataSource ds;
 
-    @Inject
+    Integer shard;
+
+    GlobalConfigurationBuilder global;
+    DefaultCacheManager cacheManager;
+    ConfigurationBuilder builder;
+
     Cache<Integer, Cliente> cache;
 
+
+    private synchronized void initCache(){
+        if (cacheManager == null)
+            createCacheManager();
+        Log.info("Creating cache");
+        cache = cacheManager
+                    .administration()
+                    .withFlags(CacheContainerAdmin.AdminFlag.VOLATILE)
+                    .getOrCreateCache("rinhaCache", builder.build());
+    }
+
+    private synchronized void createCacheManager() {
+        Log.info("Creating cache manager");
+        global= GlobalConfigurationBuilder.defaultClusteredBuilder();
+        global.serialization().marshaller(new org.infinispan.commons.marshall.JavaSerializationMarshaller());
+        global.serialization().allowList()
+                .addClasses(Cliente.class, Transacao.class, LinkedList.class, TreeSet.class, PriorityQueue.class, TransacaoComparator.class);
+
+        cacheManager = new DefaultCacheManager(global.build());
+
+        builder = new ConfigurationBuilder();
+        builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+        builder
+                .transaction()
+                .transactionMode(TransactionMode.TRANSACTIONAL) // Enable transactional mode
+                .lockingMode(LockingMode.PESSIMISTIC) // Set pessimistic locking mode
+                .locking()
+                .lockAcquisitionTimeout(60000L);
+    }
+
+    public void onStop(@Observes ShutdownEvent e){
+        if (cacheManager != null){
+            cacheManager.stop();
+        }
+    }
+
+ 
     @PostConstruct
     public void init(){
         this.shard = envInt("RINHA_SHARD", 0);
         Log.info("PostConstruct shard["+shard+"]");
+        initCache();
         try {
             processExtrato(1, null);
             postTransacao(1, "0", "c", "onStartup", null);
@@ -230,10 +283,10 @@ public class CachedServlet extends HttpServlet {
             tm.begin();
             acache.lock(id);
             var cliente = loadCliente(id);
-            var status = cliente.transacao(valor, tipo, descricao);
+            cliente = cliente.transacao(valor, tipo, descricao);
             cache.put(id, cliente);
             if (resp != null){
-                resp.setStatus(status);
+                resp.setStatus(cliente.status);
                 resp.setHeader("x-rinha-shard", this.shard.toString());
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
@@ -255,7 +308,7 @@ public class CachedServlet extends HttpServlet {
     private Cliente loadCliente(Integer id) {
         var cliente = cache.get(id);
         if (cliente == null){
-            cliente = Cliente.of(shard, id, "Cliente "+id, 0, Cliente.limiteOf(id), null);
+            cliente = Cliente.of(shard, id, "Cliente "+id, 0, Cliente.limiteOf(id), 200, new PriorityQueue<>(Transacao.comparator));
         }
         return cliente;
     }

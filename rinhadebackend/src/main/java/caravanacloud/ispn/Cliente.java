@@ -17,15 +17,18 @@ public class Cliente implements Serializable {
     public Integer id;
     public int saldo;
     public int limite;
-    public String jsonData;
+    public int status;
     public PriorityQueue<Transacao> transacoes;
+    private String nome;
 
-    public static Cliente of(Integer shard, Integer id, String nome, int saldo, int limite, String jsonData) {
+    public static Cliente of(Integer shard, Integer id, String nome, int saldo, int limite, int status, PriorityQueue<Transacao> txxs) {
         var c = new Cliente();
         c.id = id;
         c.saldo = saldo;
         c.limite = limite;
-        c.jsonData = jsonData;
+        c.status = status;
+        c.nome = "Cliente "+id;
+        c.transacoes = txxs;
         return c;
     }
 
@@ -73,7 +76,7 @@ public class Cliente implements Serializable {
                """, saldo, dataExtrato, limite, transacoesJson);
     }
 
-    public synchronized int transacao(Integer valor, String tipo, String descricao) {
+    public synchronized Cliente transacao(Integer valor, String tipo, String descricao) {
         var diff = switch (tipo) {
             case "d" -> -1 * valor;
             default -> valor;
@@ -81,16 +84,24 @@ public class Cliente implements Serializable {
         var novo = valor + diff;
         if (novo < -1 * limiteOf(id)){
             Log.warn("---- LIMITE ULTRAPASSADO ---");
-            return 422;
+            return Cliente.error(422);
         }
         var txx = Transacao.of(valor, tipo, descricao, LocalDateTime.now());
-        var txxs = getTransacoes();
+        //needed?
+        var txxs = new PriorityQueue<>(getTransacoes());
         txxs.add(txx);
         if (txxs.size() > 10){
             txxs.poll();
         }
-        this.saldo += diff;
-        return 200;
+        var nsaldo = saldo + diff;
+        var nstatus = 200;
+        return Cliente.of(shard,id,nome,nsaldo,limite,nstatus,txxs);
+    }
+
+    private static Cliente error(int status) {
+        var cliente = new Cliente();
+        cliente.status = status;
+        return cliente;
     }
 
     private synchronized  PriorityQueue<Transacao> getTransacoes() {

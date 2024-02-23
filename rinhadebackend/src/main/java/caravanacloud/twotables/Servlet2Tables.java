@@ -1,4 +1,4 @@
-package caravanacloud;
+package caravanacloud.twotables;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 
-@WebServlet(value = "/*")
+@WebServlet(value = "/2tables/*")
 @Transactional
 public class Servlet2Tables extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
