@@ -6,8 +6,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.PriorityQueue;
 
 
 
@@ -17,7 +18,7 @@ public class Cliente implements Serializable {
     public int saldo;
     public int limite;
     public String jsonData;
-    public LinkedList<Transacao> transacoes;
+    public PriorityQueue<Transacao> transacoes;
 
     public static Cliente of(Integer shard, Integer id, String nome, int saldo, int limite, String jsonData) {
         var c = new Cliente();
@@ -42,8 +43,9 @@ public class Cliente implements Serializable {
     public String toExtrato(){
         var txxs = getTransacoes();
         StringBuilder transacoesJson = new StringBuilder("[");
-        for (int i = 0; i < txxs.size(); i++) {
-            Transacao t = txxs.get(i);
+        Iterator itx = txxs.iterator();
+        for (int i = 0; itx.hasNext(); i++) {
+            Transacao t = (Transacao) itx.next();
             transacoesJson.append(String.format("""
                 {
                     "valor": %d,
@@ -91,9 +93,12 @@ public class Cliente implements Serializable {
         return 200;
     }
 
-    private synchronized  LinkedList<Transacao> getTransacoes() {
+
+
+    private synchronized  PriorityQueue<Transacao> getTransacoes() {
         if (transacoes == null){
-            transacoes = new LinkedList<>();
+            Comparator<Transacao> timeComparator = Comparator.comparing(Transacao::getRealizadaEm).reversed();
+            transacoes = new PriorityQueue<>(timeComparator);
         }
         return transacoes;
     }

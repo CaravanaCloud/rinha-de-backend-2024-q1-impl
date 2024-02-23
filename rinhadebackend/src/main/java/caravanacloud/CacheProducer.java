@@ -15,6 +15,8 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 
 import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.TreeSet;
 
 public class CacheProducer {
     GlobalConfigurationBuilder global;
@@ -38,7 +40,7 @@ public class CacheProducer {
         global= GlobalConfigurationBuilder.defaultClusteredBuilder();
         global.serialization().marshaller(new org.infinispan.commons.marshall.JavaSerializationMarshaller());
         global.serialization().allowList()
-                .addClasses(Cliente.class, Transacao.class, LinkedList.class);
+                .addClasses(Cliente.class, Transacao.class, LinkedList.class, TreeSet.class, PriorityQueue.class);
 
         cacheManager = new DefaultCacheManager(global.build());
 
