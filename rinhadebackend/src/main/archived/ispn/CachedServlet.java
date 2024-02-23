@@ -1,4 +1,4 @@
-package caravanacloud;
+package caravanacloud.ispn;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -127,8 +127,8 @@ public class CachedServlet extends HttpServlet {
                 var extrato = cliente.toExtrato();
                 Log.info("RETURNING EXTRATO: "+extrato);
                 resp.getWriter().write(extrato);
-                resp.getWriter().flush();
-                resp.flushBuffer();
+                //resp.getWriter().flush();
+                //resp.flushBuffer();
             }
             tm.commit();
         }catch (Exception e) {
@@ -238,8 +238,8 @@ public class CachedServlet extends HttpServlet {
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
                 resp.getWriter().write(cliente.toTransacao());
-                resp.getWriter().flush();
-                resp.flushBuffer();
+                //resp.getWriter().flush();
+                //resp.flushBuffer();
             }
             tm.commit();
         }catch (Exception e) {

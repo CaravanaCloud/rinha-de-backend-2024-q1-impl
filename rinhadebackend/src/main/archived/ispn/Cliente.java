@@ -1,4 +1,4 @@
-package caravanacloud;
+package caravanacloud.ispn;
 
 import io.quarkus.logging.Log;
 
