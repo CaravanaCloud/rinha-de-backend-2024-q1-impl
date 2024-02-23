@@ -40,9 +40,10 @@ public class Cliente implements Serializable {
     }
 
     public String toExtrato(){
+        var txxs = getTransacoes();
         StringBuilder transacoesJson = new StringBuilder("[");
-        for (int i = 0; i < transacoes.size(); i++) {
-            Transacao t = transacoes.get(i);
+        for (int i = 0; i < txxs.size(); i++) {
+            Transacao t = txxs.get(i);
             transacoesJson.append(String.format("""
                 {
                     "valor": %d,
@@ -50,7 +51,7 @@ public class Cliente implements Serializable {
                     "descricao": "%s",
                     "realizada_em": "%s"
                 }""", t.valor, t.tipo, t.descricao, t.realizadaEm));
-            if (i < transacoes.size() - 1) {
+            if (i < txxs.size() - 1) {
                 transacoesJson.append(",");
             }
         }
@@ -81,15 +82,20 @@ public class Cliente implements Serializable {
             return 422;
         }
         var txx = Transacao.of(valor, tipo, descricao, LocalDateTime.now());
-        if (transacoes == null){
-            transacoes = new LinkedList<>();
-        }
-        transacoes.add(txx);
-        if (transacoes.size() > 10){
-            transacoes.removeFirst();
+        var txxs = getTransacoes();
+        txxs.add(txx);
+        if (txxs.size() > 10){
+            txxs.removeFirst();
         }
         this.saldo += diff;
         return 200;
+    }
+
+    private synchronized  LinkedList<Transacao> getTransacoes() {
+        if (transacoes == null){
+            transacoes = new LinkedList<>();
+        }
+        return transacoes;
     }
 
     public String toTransacao() {
