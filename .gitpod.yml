@@ -9,6 +9,16 @@ tasks:
     command: |
       mvn -f ./rinhadebackend quarkus:dev
 
+  - name: Start Servers
+    command: |
+      docker compose down; docker compose up;
+  
+  - name: Run Rinha
+    command: |
+      sleep 10;
+      cd ../rinha-de-backend-2024-q1/
+      ./executar-teste-local.sh
+      
 ports:
   - port: 3306
     visibility: private
