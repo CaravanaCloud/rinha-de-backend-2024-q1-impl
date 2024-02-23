@@ -92,7 +92,7 @@ public class Cliente implements Serializable {
         this.saldo += diff;
         return 200;
     }
-    
+
     private synchronized  PriorityQueue<Transacao> getTransacoes() {
         if (transacoes == null){
             
@@ -106,7 +106,7 @@ public class Cliente implements Serializable {
                 {
                    "saldo": %d,
                    "limite": %d
-                 },
+                 }
                """, saldo, limite);
     }
 }
