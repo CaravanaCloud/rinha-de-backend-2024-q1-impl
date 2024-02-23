@@ -135,7 +135,7 @@ public class CachedServlet extends HttpServlet {
         try {
             tm.begin();
             acache.lock(id);
-            var cliente = cache.get(id);
+            var cliente = loadCliente(id);
             if (resp != null){
                 resp.setStatus(200);
                 resp.setHeader("x-rinha-shard", this.shard.toString());
@@ -244,10 +244,7 @@ public class CachedServlet extends HttpServlet {
         try {
             tm.begin();
             acache.lock(id);
-            var cliente = cache.get(id);
-            if (cliente == null){
-                cliente = Cliente.of(shard, id, "Cliente "+id, 0, Cliente.limiteOf(id), null);
-            }
+            var cliente = loadCliente(id);
             var status = cliente.transacao(valor, tipo, descricao);
             cache.put(id, cliente);
             if (resp != null){
@@ -268,6 +265,14 @@ public class CachedServlet extends HttpServlet {
             }
             Log.errorf("CACHING ERROR %s", e.getMessage());
         }
+    }
+
+    private Cliente loadCliente(Integer id) {
+        var cliente = cache.get(id);
+        if (cliente == null){
+            cliente = Cliente.of(shard, id, "Cliente "+id, 0, Cliente.limiteOf(id), null);
+        }
+        return cliente;
     }
 
     private void handleSQLException(SQLException e, HttpServletResponse resp) throws IOException {
