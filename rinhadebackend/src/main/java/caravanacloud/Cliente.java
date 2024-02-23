@@ -87,18 +87,16 @@ public class Cliente implements Serializable {
         var txxs = getTransacoes();
         txxs.add(txx);
         if (txxs.size() > 10){
-            txxs.removeFirst();
+            txxs.poll();
         }
         this.saldo += diff;
         return 200;
     }
-
-
-
+    
     private synchronized  PriorityQueue<Transacao> getTransacoes() {
         if (transacoes == null){
-            Comparator<Transacao> timeComparator = Comparator.comparing(Transacao::getRealizadaEm).reversed();
-            transacoes = new PriorityQueue<>(timeComparator);
+            
+            transacoes = new PriorityQueue<>(Transacao.comparator);
         }
         return transacoes;
     }

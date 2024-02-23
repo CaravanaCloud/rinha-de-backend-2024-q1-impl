@@ -55,7 +55,9 @@ public class CacheProducer {
     }
 
     public void onStop(@Observes ShutdownEvent e){
-        cacheManager.stop();
+        if (cacheManager != null){
+            cacheManager.stop();
+        }
     }
 
 

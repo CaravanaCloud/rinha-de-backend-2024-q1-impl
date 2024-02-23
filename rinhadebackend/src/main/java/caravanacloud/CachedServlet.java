@@ -51,29 +51,18 @@ public class CachedServlet extends HttpServlet {
     @PostConstruct
     public void init(){
         this.shard = envInt("RINHA_SHARD", 0);
-        Log.info("PostConstruct shard["+shard+"] 🐔💥");
+        Log.info("PostConstruct shard["+shard+"]");
+        try {
+            processExtrato(1, null);
+            postTransacao(1, "0", "c", "onStartup", null);
+            Log.info("StartupEvent shard["+shard+"] ready");
+            Log.info("🐔💥");
+        } catch (Exception e) {
+            Log.errorf(e, "Warmup failed [%s]", e.getMessage());
+        }
     }
-    public void onStartup(@Observes StartupEvent event) {
-        Log.info("StartupEvent shard["+shard+"] 🐔💥");
-        var ready = false;
-        // create json node
-        do {
-            try {
-                warmup();
-                processExtrato(1, null);
-                postTransacao(1, "0", "c", "onStartup", null);
-                ready = true;
-            } catch (Exception e) {
-                Log.errorf(e, "Warmup failed [%s], waiting for db", e.getMessage());
-                ready = false;
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        } while (!ready);
-    }
+
+ 
 
     private static Integer envInt(String varName, int defaultVal) {
         var result = System.getenv(varName);
@@ -91,13 +80,7 @@ public class CachedServlet extends HttpServlet {
         }
     }
 
-    private void warmup() throws SQLException{
-        var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
-        try (var conn = ds.getConnection();
-                var stmt = conn.prepareStatement(query)) {
-            stmt.execute();
-        }
-    }
+
 
     private static String getEnv(String varName, String defaultVal) {
         var result = System.getenv(varName);
@@ -141,7 +124,9 @@ public class CachedServlet extends HttpServlet {
                 resp.setHeader("x-rinha-shard", this.shard.toString());
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
-                resp.getWriter().write(cliente.toExtrato());
+                var extrato = cliente.toExtrato();
+                Log.info("RETURNING EXTRATO: "+extrato);
+                resp.getWriter().write(extrato);
                 resp.getWriter().flush();
                 resp.flushBuffer();
             }

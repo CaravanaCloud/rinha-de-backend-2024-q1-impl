@@ -1,4 +1,8 @@
+curl -v -X GET http://localhost:9001/clientes/1/extrato
+
 curl -v -X GET http://localhost:9999/clientes/1/extrato
+
+
 curl -v -X GET http://localhost:9999/clientes/2/extrato
 curl -v -X GET http://localhost:9999/clientes/3/extrato
 curl -v -X GET http://localhost:9999/clientes/4/extrato
