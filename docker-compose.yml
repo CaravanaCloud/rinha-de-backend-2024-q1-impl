@@ -1,10 +1,9 @@
-# docker compsoe odwn; docker compose up
 version: "3.9"
 
 services:
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:postgresql
+    image: caravanacloud/rinhadebackend-native:2tables
     hostname: api01
     container_name: api01
     depends_on:
@@ -15,6 +14,7 @@ services:
       interval: 2s
       retries: 10
     environment:
+      - RINHA_SHARD=0
       - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
       - QUARKUS_HTTP_PORT=9001
       - QUARKUS_BANNER_ENABLED=false
@@ -47,12 +47,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.35"
+          cpus: "0.25"
           memory: "100MB"
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:postgresql
+    image: caravanacloud/rinhadebackend-native:2tables
     hostname: api02
     container_name: api02
     depends_on:
@@ -63,6 +63,7 @@ services:
       interval: 2s
       retries: 10
     environment:
+      - RINHA_SHARD=1
       - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
       - QUARKUS_HTTP_PORT=9002
       - QUARKUS_BANNER_ENABLED=false
@@ -95,7 +96,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.35"
+          cpus: "0.25"
           memory: "100MB"
 
   nginx:
@@ -124,8 +125,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.20"
-          memory: "50MB"
+          cpus: "0.25"
+          memory: "40MB"
 
   db:
     network_mode: host
@@ -147,8 +148,8 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.60"
-          memory: "300MB"
+          cpus: "0.75"
+          memory: "310MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s

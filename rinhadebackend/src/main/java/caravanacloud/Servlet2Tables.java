@@ -3,7 +3,6 @@ package caravanacloud;
 import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,7 +26,7 @@ import jakarta.transaction.Transactional;
 
 @WebServlet(value = "/*")
 @Transactional
-public class ShardedServlet extends HttpServlet {
+public class Servlet2Tables extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?, ?)";
     private static final String WARMUP_QUERY = "select 1+1;";
