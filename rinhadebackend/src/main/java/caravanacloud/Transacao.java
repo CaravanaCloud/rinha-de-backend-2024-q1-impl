@@ -1,4 +1,4 @@
-package caravanacloud.cached;
+package caravanacloud;
 
 import java.io.Serializable;
 

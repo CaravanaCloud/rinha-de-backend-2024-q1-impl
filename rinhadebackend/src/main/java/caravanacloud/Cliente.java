@@ -1,7 +1,6 @@
-package caravanacloud.cached;
+package caravanacloud;
 
 import java.io.Serializable;
-import java.util.Deque;
 import java.util.LinkedList;
 
 
