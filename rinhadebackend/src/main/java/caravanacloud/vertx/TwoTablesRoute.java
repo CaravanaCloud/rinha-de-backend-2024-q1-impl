@@ -116,7 +116,8 @@ public class TwoTablesRoute {
         var query = client.preparedQuery(EXTRATO_QUERY).execute(Tuple.of(id));
         Uni<Result> result = query.onItem().transform(RowSet::iterator) 
             .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(data -> data != null ? Result.of(data) : null); 
+            .onItem().transform(data -> data != null ? Result.of(data) : null)
+            .onFailure().recoverWithItem(e -> Result.of("{\"err_extrato\": \""+e.getMessage()+"\"}", 500)); 
         return result;
     }
 
@@ -162,7 +163,8 @@ public class TwoTablesRoute {
         var query = client.preparedQuery(TRANSACAO_QUERY).execute(Tuple.of(shard, id, valor, tipo, descricao));
         Uni<Result> result = query.onItem().transform(RowSet::iterator) 
             .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(data -> data != null ? Result.of(data) : null); 
+            .onItem().transform(data -> data != null ? Result.of(data) : null)
+            .onFailure().recoverWithItem(e -> Result.of("{\"err_transacao\": \""+e.getMessage()+"\"}", 500));  
         return result;
 	}
 }
