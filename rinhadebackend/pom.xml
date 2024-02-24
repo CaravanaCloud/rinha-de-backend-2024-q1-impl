@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
-<project
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>caravanacloud</groupId>
   <artifactId>rinhadebackend</artifactId>
@@ -44,56 +42,19 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-agroal</artifactId>
+      <artifactId>quarkus-vertx</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-postgresql</artifactId>
+      <artifactId>quarkus-reactive-pg-client</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-undertow</artifactId>
+      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core-jakarta</artifactId>
-    </dependency>
-    <!--
-    <dependency>
-      <groupId>com.newrelic.agent.java</groupId>
-      <artifactId>newrelic-java</artifactId>
-      <version>8.4.0</version>
-      <scope>provided</scope>
-      <type>zip</type>
-    </dependency>
-    -->
   </dependencies>
   <build>
     <plugins>
-      <!--
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.1</version>
-        <executions>
-          <execution>
-            <id>unpack-newrelic</id>
-            <phase>package</phase>
-            <goals>
-              <goal>unpack-dependencies</goal>
-            </goals>
-            <configuration>
-              <includeGroupIds>com.newrelic.agent.java</includeGroupIds>
-              <includeArtifactIds>newrelic-java</includeArtifactIds>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
-              <outputDirectory>${project.build.directory}</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    -->
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
@@ -158,9 +119,7 @@
         </property>
       </activation>
       <properties>
-        <!-- pgo=/home/container-user/quarkus-app/profile.iprof -->
-        <quarkus.native.additional-build-args>
-          --pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=90,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=90,--install-exit-handlers</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
