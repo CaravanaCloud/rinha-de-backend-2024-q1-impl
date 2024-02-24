@@ -1,8 +1,9 @@
 package caravanacloud.vertx;
 
+import java.util.Map;
+
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
-import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -12,14 +13,9 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
-
-import java.util.Map;
 
 @ApplicationScoped
 @Path("/clientes")
