@@ -117,12 +117,12 @@ services:
     hostname: lb
     container_name: lb
     network_mode: host 
-#    image: nginx:latest
-#    volumes:
-#      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    image: haproxy:alpine3.19
+    image: nginx:latest
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#    image: haproxy:alpine3.19
+#    volumes:
+#      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
 #    image: envoyproxy/envoy:v1.29-latest
 #    volumes:
 #      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
