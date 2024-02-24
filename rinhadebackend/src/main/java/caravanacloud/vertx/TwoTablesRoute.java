@@ -1,24 +1,17 @@
 package caravanacloud.vertx;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.StartupEvent;
-import io.smallrye.mutiny.Multi;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -31,12 +24,12 @@ import jakarta.ws.rs.core.Response;
 @ApplicationScoped
 @Path("/clientes")
 public class TwoTablesRoute {
-
+    private static final String VERSION_ID = "vertx-0.0.1";
     private static final String EXTRATO_QUERY = "select * from proc_extrato($1)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao($1, $2, $3, $4, $5)";
     private static final String WARMUP_QUERY = "select 1+1;";
 
-    private Integer shard;
+    private int shard;
 
     @Inject
     Vertx vertx;
@@ -44,14 +37,14 @@ public class TwoTablesRoute {
     @Inject
     PgPool client; 
     public void onStartup(@Observes StartupEvent event) {
-        this.shard = envInt("RINHA_SHARD", 0);
-        System.out.println("StartupEvent shard["+ shard +"] 🐔💥");
+        shard = envInt("RINHA_SHARD", 0);
+        System.out.println("StartupEvent shard["+ shard +"] version["+VERSION_ID+"] 🐔💥");
         boolean ready = false;
         do {
             try {
                 warmup();
-                // processExtrato(1, null);
-                // postTransacao(1, "0", "c", "onStartup", null);
+                processExtrato(333);
+                processTransacao(333, Map.of("valor", "0", "tipo", "c", "descricao", "warmup"));
                 ready = true;
             } catch (Exception e) {
                 System.err.println("Warmup failed, waiting for db: " + e.getMessage());
@@ -65,17 +58,17 @@ public class TwoTablesRoute {
         } while (!ready);
     }
 
-    private static Integer envInt(String varName, int defaultVal) {
+    private static int envInt(String varName, int defaultVal) {
         var result = System.getenv(varName);
         if (result == null) {
             System.out.println("Env var " + varName + " not found, using default " + defaultVal);
             return defaultVal;
         }
         try {
-            return Integer.valueOf(result);
+            return Integer.parseInt(result);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return -1;
         }
     }
 
@@ -95,76 +88,86 @@ public class TwoTablesRoute {
 
     @GET                                                                                   
     @Path("/{id}/extrato")
-    public Uni<Response> doGet(@PathParam("id") Integer id) {
+    public Uni<Response> doGet(@PathParam("id") int id) {
         if (invalid(id)) {
             return Uni.createFrom().item(Response.status(404).build());
         }
         var result = processExtrato(id);
-        var resp = result.onItem().transform(r -> r != null ? 
-              Response.ok(r.body()).status(r.statusCode()).build() 
-            : Response.status(422).build());                                           
+        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());                                           
         return resp;  
     }
 
 
-    private boolean invalid(Integer id) {
+    private boolean invalid(int id) {
         return  id > 5 || id < 1;
 	}
 
-	private Uni<Result> processExtrato(Integer id) {
+	private Uni<Response> processExtrato(int id) {
         // invoke EXTRATO_QUERY
         var query = client.preparedQuery(EXTRATO_QUERY).execute(Tuple.of(id));
-        Uni<Result> result = query.onItem().transform(RowSet::iterator) 
+        Uni<Response> result = query.onItem().transform(RowSet::iterator) 
             .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(data -> data != null ? Result.of(data) : null)
-            .onFailure().recoverWithItem(e -> Result.of("{\"err_extrato\": \""+e.getMessage()+"\"}", 500)); 
+            .onItem().transform(r -> r != null ? responseOf(r) : null)
+            .onFailure().recoverWithItem(e -> errorOf(e,"err_extrato")); 
         return result;
+    }
+
+    private Response errorOf(Throwable e, String key) {
+        return  Response.status(422).entity("{\""+key+"\": \""+e.getMessage()+"\"}").build();
+    }
+
+    private Response errorOf(String e, int status) {
+        return  Response.status(status).entity("{\"err\": \""+e+"\"}").build();
+    }
+
+    private Response responseOf(Row r) {
+        var status = r.getInteger("status_code");
+        var body = r.getJson("body");
+        return Response.status(status).entity(body).build();
     }
 
     @Path("/{id}/transacoes")
     @Consumes("application/json")
     @POST
-    public Uni<Response> doPost(@PathParam("id") Integer id,  Map<String, String> txx) {
+    public Uni<Response> doPost(@PathParam("id") int id,  Map<String, String> txx) {
         if (invalid(id)) {
             return Uni.createFrom().item(Response.status(404).build());
         }
         var result = processTransacao(id, txx);
-        var resp = result.onItem().transform(r -> r != null ? 
-              Response.ok(r.body()).status(r.statusCode()).build() 
-            : Response.status(422).build());                                      
+        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());                                
         return resp;  
     }
 
-	private Uni<Result> processTransacao(Integer id, Map<String, String> txx) {
+	private Uni<Response> processTransacao(int id, Map<String, String> txx) {
         var valorNumber = txx.get("valor");
 		if (valorNumber == null || valorNumber.contains(".")) {
-            return Uni.createFrom().item(Result.of("{\"err\": \"valor\"}", 422));
+            return Uni.createFrom().item(errorOf("valor invalido", 422));
         }
 
-        Integer valor = null;
+        int valor = -1;
         try {
-            valor = Integer.parseInt((String) valorNumber);
+            valor = Integer.parseInt(valorNumber);
         } catch (NumberFormatException e) {
-            return Uni.createFrom().item(Result.of("{\"err\": \"valor\"}", 422));
+            return Uni.createFrom().item(errorOf("valor invalido", 422));
         }
 
         String tipo = txx.get("tipo");
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
-            return Uni.createFrom().item(Result.of("{\"err\": \"tipo\"}", 422));
+            return Uni.createFrom().item(errorOf("tipo invalido", 422));
         }
 
         var descricao = txx.get("descricao");
         if (descricao == null || descricao.isEmpty() || descricao.length() > 10 || "null".equals(descricao)) {
-            return Uni.createFrom().item(Result.of("{\"err\": \"descricao\"}", 422));
+            return Uni.createFrom().item(errorOf("descricao invalida", 422));
         }
 
         var shard = 0;
 
         var query = client.preparedQuery(TRANSACAO_QUERY).execute(Tuple.of(shard, id, valor, tipo, descricao));
-        Uni<Result> result = query.onItem().transform(RowSet::iterator) 
+        Uni<Response> result = query.onItem().transform(RowSet::iterator) 
             .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(data -> data != null ? Result.of(data) : null)
-            .onFailure().recoverWithItem(e -> Result.of("{\"err_transacao\": \""+e.getMessage()+"\"}", 422));  
+            .onItem().transform(r -> r != null ? responseOf(r) : null)
+            .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));  
         return result;
 	}
 }

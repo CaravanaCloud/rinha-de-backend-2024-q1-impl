@@ -15,7 +15,7 @@ tasks:
   
   - name: Run Rinha
     command: |
-      sleep 30;
+      sleep 45;
       cd ../rinha-de-backend-2024-q1/
       ./executar-teste-local.sh
 
