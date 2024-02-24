@@ -4,7 +4,7 @@ services:
 
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.1
+    image: caravanacloud/rinhadebackend-native:0.0.2
     hostname: api01
     container_name: api01
     depends_on:
@@ -44,11 +44,11 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "100MB"
+          memory: "125MB"
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.1
+    image: caravanacloud/rinhadebackend-native:0.0.2
     hostname: api02
     container_name: api02
     depends_on:
@@ -87,7 +87,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: "100MB"
+          memory: "125MB"
 
   lb:
     hostname: lb
@@ -138,7 +138,7 @@ services:
       resources: 
         limits:
           cpus: "0.70"
-          memory: "300MB"
+          memory: "250MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
