@@ -3,7 +3,7 @@ version: "3.9"
 services:
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:2tables
+    image: caravanacloud/rinhadebackend-native:vertx
     hostname: api01
     container_name: api01
     depends_on:
@@ -59,7 +59,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:2tables
+    image: caravanacloud/rinhadebackend-native:vertx
     hostname: api02
     container_name: api02
     depends_on:
@@ -173,7 +173,7 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./init.postgresql.2tables.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.vertx.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:

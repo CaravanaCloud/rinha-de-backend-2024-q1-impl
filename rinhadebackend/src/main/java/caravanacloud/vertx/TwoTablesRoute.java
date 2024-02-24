@@ -164,7 +164,7 @@ public class TwoTablesRoute {
         Uni<Result> result = query.onItem().transform(RowSet::iterator) 
             .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
             .onItem().transform(data -> data != null ? Result.of(data) : null)
-            .onFailure().recoverWithItem(e -> Result.of("{\"err_transacao\": \""+e.getMessage()+"\"}", 500));  
+            .onFailure().recoverWithItem(e -> Result.of("{\"err_transacao\": \""+e.getMessage()+"\"}", 422));  
         return result;
 	}
 }
