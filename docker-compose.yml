@@ -54,7 +54,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.30"
           memory: "100MB"
 
   api02:
@@ -110,7 +110,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.30"
           memory: "100MB"
 
   lb:
@@ -156,7 +156,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "50MB"
 
   db:
@@ -179,7 +179,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.75"
+          cpus: "0.70"
           memory: "300MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
