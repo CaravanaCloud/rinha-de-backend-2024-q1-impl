@@ -44,11 +44,18 @@ services:
       nofile:
         soft: 1000000
         hard: 1000000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.api-service.loadbalancer.server.port=9001"
+      - "traefik.http.routers.api-service.rule=Host(`api.example.com`)"
+      - "traefik.http.routers.api-service.entrypoints=web"
+      - "traefik.http.routers.api-service.rule=PathPrefix(`/`)"
+
     deploy:
       resources:
         limits:
           cpus: "0.25"
-          memory: "100MB"
+          memory: "50MB"
 
   api02:
     network_mode: host
@@ -89,6 +96,13 @@ services:
       - QUARKUS_LOG_CATEGORY__io.smallreye__LEVEL=INFO
     ports:
       - "9002:9002"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.api-service.loadbalancer.server.port=9002"
+      - "traefik.http.routers.api-service.rule=Host(`api.example.com`)"
+      - "traefik.http.routers.api-service.entrypoints=web"
+      - "traefik.http.routers.api-service.rule=PathPrefix(`/`)"
+
     ulimits:
       nofile:
         soft: 1000000
@@ -99,20 +113,36 @@ services:
           cpus: "0.25"
           memory: "100MB"
 
-  nginx:
+  lb:
     hostname: lb
     container_name: lb
     network_mode: host 
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#    image: haproxy:alpine3.19
+#    volumes:
+#      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+#    image: envoyproxy/envoy:v1.29-latest
+#    volumes:
+#      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+#    image: traefik:v2.5
+#    command:
+#      - "--log.level=ERROR"
+#      - "--api.insecure=true"
+#      - "--providers.docker=true"
+#      - "--providers.docker.exposedbydefault=false"
+#      - "--entrypoints.web.address=:9999"
+    ports:
+      - "9999:9999"
+#      - "9090:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     depends_on:
       api01:
         condition: service_healthy
       api02:
         condition: service_healthy
-    ports:
-      - "9999:9999"
     ulimits:
       nofile:
         soft: 1000000
@@ -126,7 +156,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "40MB"
+          memory: "100MB"
 
   db:
     network_mode: host
@@ -149,7 +179,7 @@ services:
       resources: 
         limits:
           cpus: "0.75"
-          memory: "310MB"
+          memory: "300MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
