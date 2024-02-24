@@ -137,24 +137,24 @@ public class TwoTablesRoute {
 	private Uni<Result> processTransacao(Integer id, Map<String, String> txx) {
         var valorNumber = txx.get("valor");
 		if (valorNumber == null || valorNumber.contains(".")) {
-            return Uni.createFrom().item(Result.of("{'err': 'valor'}", 422));
+            return Uni.createFrom().item(Result.of("{\"err\": \"valor\"}", 422));
         }
 
         Integer valor = null;
         try {
             valor = Integer.parseInt((String) valorNumber);
         } catch (NumberFormatException e) {
-            return Uni.createFrom().item(Result.of("{'err': 'valor'}", 422));
+            return Uni.createFrom().item(Result.of("{\"err\": \"valor\"}", 422));
         }
 
         String tipo = txx.get("tipo");
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
-            return Uni.createFrom().item(Result.of("{'err': 'tipo'}", 422));
+            return Uni.createFrom().item(Result.of("{\"err\": \"tipo\"}", 422));
         }
 
         var descricao = txx.get("descricao");
         if (descricao == null || descricao.isEmpty() || descricao.length() > 10 || "null".equals(descricao)) {
-            return Uni.createFrom().item(Result.of("{'err': 'descricao'}", 422));
+            return Uni.createFrom().item(Result.of("{\"err\": \"descricao\"}", 422));
         }
 
         var shard = 0;

@@ -8,7 +8,12 @@ import io.vertx.mutiny.sqlclient.Row;
 
 public record Result(JsonObject body, int statusCode) {
     public static Result of(Row row) {
-        return new Result(row.getJsonObject("body"), row.getInteger("status_code"));
+        var status = row.getInteger("status_code");
+        if (status == 200){
+            var body = row.getJsonObject("body");
+            return new Result(body, status);
+        }
+        return new Result(new JsonObject("{\"err\": \"nobody\"}"), status);
     }
 
     public static Result of( String jsonBody, int statusCode) {
