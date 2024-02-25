@@ -42,19 +42,15 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-agroal</artifactId>
+      <artifactId>quarkus-vertx</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-postgresql</artifactId>
+      <artifactId>quarkus-reactive-pg-client</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-undertow</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core-jakarta</artifactId>
+      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
     </dependency>
   </dependencies>
   <build>
@@ -116,6 +112,18 @@
   </build>
   <profiles>
     <profile>
+      <id>dev</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-opentelemetry</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>native</id>
       <activation>
         <property>
@@ -123,8 +131,7 @@
         </property>
       </activation>
       <properties>
-        <!-- pgo=/home/container-user/quarkus-app/profile.iprof -->
-        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=90,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=serial,-R:MaximumHeapSizePercent=90,--install-exit-handlers</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
