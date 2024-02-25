@@ -112,6 +112,18 @@
   </build>
   <profiles>
     <profile>
+      <id>dev</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-opentelemetry</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>native</id>
       <activation>
         <property>
