@@ -1,6 +1,7 @@
 CREATE UNLOGGED TABLE clientes (
 	id SERIAL PRIMARY KEY,
-	saldo INTEGER NOT NULL DEFAULT 0
+	saldo INTEGER NOT NULL DEFAULT 0,
+    extrato TEXT
 );
     
 CREATE UNLOGGED TABLE transacoes (
@@ -12,8 +13,6 @@ CREATE UNLOGGED TABLE transacoes (
 	realizada_em TIMESTAMP(6) NOT NULL);
 
 CREATE INDEX idx_cliente_id ON transacoes (cliente_id);
-
-INSERT INTO clientes(id) VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT);
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 SELECT pg_prewarm('clientes');
@@ -31,6 +30,7 @@ DECLARE
     v_saldo INT;
     v_limite INT;
     result json_result;
+    v_extrato TEXT;
 BEGIN
     -- SELECT limite_cliente(p_cliente_id) INTO v_limite;
     v_limite := CASE p_cliente_id
@@ -66,7 +66,27 @@ BEGIN
                 END
         WHERE id = p_cliente_id
         RETURNING saldo INTO v_saldo;
+    
+    SELECT json_build_object(
+        'saldo', json_build_object(
+            'total', v_saldo,
+            'data_extrato', TO_CHAR(now(), 'YYYY-MM-DD HH:MI:SS.US'),
+            'limite', v_limite
+        ),
+        'ultimas_transacoes', COALESCE((
+            SELECT json_agg(row_to_json(t)) FROM (
+                SELECT valor, tipo, descricao
+                FROM transacoes
+                WHERE cliente_id = p_cliente_id
+                ORDER BY realizada_em DESC
+                LIMIT 10
+            ) t
+        ), '[]')
+    ) INTO v_extrato;
 
+    UPDATE clientes 
+    SET extrato = v_extrato
+        WHERE id = p_cliente_id;
 
     SELECT json_build_object(
         'saldo', v_saldo,
@@ -85,39 +105,24 @@ DECLARE
     row_count integer;
     v_saldo numeric;
     v_limite numeric;
+    v_extrato TEXT;
 BEGIN
 
-    SELECT saldo
-        INTO v_saldo
+    SELECT extrato
+        INTO v_extrato
         FROM clientes
         WHERE id = p_cliente_id;
 
-    v_limite := CASE p_cliente_id
-        WHEN 1 THEN 100000
-        WHEN 2 THEN 80000
-        WHEN 3 THEN 1000000
-        WHEN 4 THEN 10000000
-        WHEN 5 THEN 500000
-        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
-    END;
-
-    SELECT json_build_object(
-        'saldo', json_build_object(
-            'total', v_saldo,
-            'data_extrato', TO_CHAR(now(), 'YYYY-MM-DD HH:MI:SS.US'),
-            'limite', v_limite
-        ),
-        'ultimas_transacoes', COALESCE((
-            SELECT json_agg(row_to_json(t)) FROM (
-                SELECT valor, tipo, descricao
-                FROM transacoes
-                WHERE cliente_id = p_cliente_id
-                ORDER BY realizada_em DESC
-                LIMIT 10
-            ) t
-        ), '[]')
-    ) INTO result.body;
+    result.body := v_extrato;
     result.status_code := 200;
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
+INSERT INTO clientes(id) VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT);
+
+SELECT proc_transacao(0,1,0,'d','init');
+SELECT proc_transacao(0,2,0,'d','init');
+SELECT proc_transacao(0,3,0,'d','init');
+SELECT proc_transacao(0,4,0,'d','init');
+SELECT proc_transacao(0,5,0,'d','init');
