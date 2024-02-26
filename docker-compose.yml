@@ -1,36 +1,27 @@
 version: "3.9"
 
 services:
+
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.2-mariadb
+    image: caravanacloud/rinhadebackend-native:0.0.2
     hostname: api01
     container_name: api01
-#    depends_on:
-#      db:
-#        condition: service_healthy
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9001/clientes/1/extrato"]
       interval: 2s
       retries: 10
     environment:
-      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
+      - RINHA_SHARD=0
       - QUARKUS_HTTP_PORT=9001
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
-<<<<<<< HEAD
       - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://127.0.0.1:5400/rinha
       - QUARKUS_DATASOURCE_REACTIVE_CACHE_PREPARED_STATEMENTS=true
-      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=150
-=======
-      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mariadb://127.0.0.1:5400/rinha
-      - QUARKUS_DATASOURCE_JDBC_INITIAL_SIZE=100
-      - QUARKUS_DATASOURCE_JDBC_MIN_SIZE=100
-      - QUARKUS_DATASOURCE_JDBC_MAX_SIZE=100
-      - QUARKUS_DATASOURCE_JDBC_TRANSACTIONS=disabled
-      - QUARKUS_DATASOURCE_JDBC_ACQUISITION_TIMEOUT=60
-      - QUARKUS_DATASOURCE_JDBC_BACKGROUND_VALIDATION_INTERVAL=0
->>>>>>> da70fd1 (wip)
+      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=100
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
       - QUARKUS_MICROMETER_ENABLED=false
@@ -52,27 +43,26 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.20"
-          memory: "100MB"
+          cpus: "0.30"
+          memory: "120MB"
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.2-mariadb
+    image: caravanacloud/rinhadebackend-native:0.0.2
     hostname: api02
     container_name: api02
-#    depends_on:
-#      db:
-#        condition: service_healthy
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9002/clientes/1/extrato"]
       interval: 2s
       retries: 10
     environment:
-      # - RINHA_WARMUP_QUERY=SELECT pg_prewarm('transacoes'); SELECT pg_prewarm('clientes'); select * from transacoes limit 5; select * from clientes limit 5;
+      - RINHA_SHARD=1
       - QUARKUS_HTTP_PORT=9002
       - QUARKUS_BANNER_ENABLED=false
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
-<<<<<<< HEAD
       - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://127.0.0.1:5400/rinha
       - QUARKUS_DATASOURCE_REACTIVE_CACHE_PREPARED_STATEMENTS=true
       - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=100
@@ -81,7 +71,6 @@ services:
       - QUARKUS_MICROMETER_ENABLED=false
       - QUARKUS_LOG__LEVEL=ERROR
       - QUARKUS_LOG_CATEGORY__caravanacloud__LEVEL=INFO
-#      - QUARKUS_LOG_CATEGORY__io.quarkus__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__org.postgresql__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.netty__LEVEL=INFO
       - QUARKUS_LOG_CATEGORY__io.vertx__LEVEL=INFO
@@ -125,8 +114,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
-          memory: "120MB"
+          cpus: "0.18"
+          memory: "44MB"
 
   warmup:
     hostname: warmup
@@ -146,37 +135,34 @@ services:
           cpus: "0.02"
           memory: "16MB"
 
+  
   db:
     network_mode: host
-    image: mariadb:latest
+    image: postgres:latest
     hostname: db
     container_name: db
     environment:
-      - MARIADB_ROOT_PASSWORD=123
-      - MARIADB_USER=rinha
-      - MARIADB_PASSWORD=123
-      - MARIADB_DATABASE=rinha
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_USER=rinha
+      - POSTGRES_DB=rinha
     ports:
-      - "5400:5400" # Default MariaDB port
+      - "5400:5400"
     expose:
       - "5400"
     volumes:
-      - ./init.mariadb.2tables.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./my.cnf:/etc/mysql/my.cnf
+      - ./init.postgresql.vertx.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
       resources: 
         limits:
           cpus: "0.70"
           memory: "250MB"
     healthcheck:
-      # test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "rinha","-P" , "5400", "--password=123"]
-      test: ["CMD", "sleep", "5"]
+      test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
       timeout: 2s
       retries: 10
       start_period: 3s
-
-
-
 
 
