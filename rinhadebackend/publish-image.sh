@@ -4,14 +4,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "## Checking registry authentication"
 docker login
 
+TAG="0.0.3-pgsql-serial-95-50"
 
-echo "## Building Cached Native image"
+echo "## Building $TAG"
 docker build \
     -f "$DIR/src/main/docker/Dockerfile.native" \
     --no-cache \
     --progress=plain \
-    -t caravanacloud/rinhadebackend-native:0.0.2-postgresql "$DIR"
-docker push caravanacloud/rinhadebackend-native:0.0.2-postgresql
+    -t caravanacloud/rinhadebackend-native:$TAG "$DIR"
+
+docker push caravanacloud/rinhadebackend-native:$TAG
 
 # echo "## Building Default image"
 # docker build -f "$DIR/src/main/docker/Dockerfile" --no-cache --progress=plain -t caravanacloud/rinhadebackend:latest "$DIR"

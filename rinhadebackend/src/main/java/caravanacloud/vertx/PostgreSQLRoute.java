@@ -1,10 +1,10 @@
 package caravanacloud.vertx;
 
+import java.time.Duration;
 import java.util.Map;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
-import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Response;
 @ApplicationScoped
 @Path("/clientes")
 public class PostgreSQLRoute {
-    private static final String VERSION_ID = "0.0.2-postgresql";
+    private static final String VERSION_ID = "0.0.3-pgsql";
     private static final String EXTRATO_QUERY = "select * from proc_extrato($1)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao($1, $2, $3, $4, $5)";
     private static final String WARMUP_QUERY = "select 1+1;";
@@ -69,7 +69,7 @@ public class PostgreSQLRoute {
         client.preparedQuery(query)
             .execute()
             .await()
-            .indefinitely();
+            .atMost(Duration.ofSeconds(30));
         Log.info("Warmup done");
     }
 
@@ -84,6 +84,7 @@ public class PostgreSQLRoute {
             return Uni.createFrom().item(Response.status(404).build());
         }
         var result = processExtrato(id);
+        // .onItem().ifNull().continueWith(Response.status(422).build())
         var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());                                           
         return resp;  
     }
