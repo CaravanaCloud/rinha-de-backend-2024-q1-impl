@@ -146,18 +146,21 @@ services:
       retries: 10
       start_period: 3s
 
-#  warmup:
-#    hostname: warmup
-#    container_name: warmup
-#    network_mode: host 
-#    image: fedora:39
-#    command: >
-#      for i in `seq 1 10`;
-#      do
-#        echo uala;
-#      done;
-#    deploy:
-#      resources: 
-#        limits:
-#          cpus: "0.01"
-#         memory: "8MB"
+  warmup:
+    hostname: warmup
+    container_name: warmup
+    network_mode: host 
+    image: fedora:39
+    command: |
+      /bin/bash -c "sleep 3;
+        for i in $(seq 1 20);
+        do echo -n '.' ;
+        curl -s -X GET http://localhost:9999/clientes/5/extrato > /dev/null;
+        curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"d\", \"descricao\": \"warmupsh\"}' http:///localhost:9000/clientes/5/transacoes > /dev/null;
+        sleep 0.05;
+      done; echo 'warmup done';"
+    deploy:
+      resources: 
+        limits:
+          cpus: "0.01"
+          memory: "8MB"
