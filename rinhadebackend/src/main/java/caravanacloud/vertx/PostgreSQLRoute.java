@@ -23,8 +23,8 @@ import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 @Path("/clientes")
-public class TwoTablesRoute {
-    private static final String VERSION_ID = "vertx-2tables-0.0.2";
+public class PostgreSQLRoute {
+    private static final String VERSION_ID = "0.0.2-postgresql";
     private static final String EXTRATO_QUERY = "select * from proc_extrato($1)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao($1, $2, $3, $4, $5)";
     private static final String WARMUP_QUERY = "select 1+1;";
