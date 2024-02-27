@@ -117,23 +117,6 @@ services:
           cpus: "0.18"
           memory: "34MB"
 
-  warmup:
-    hostname: warmup
-    container_name: warmup
-    network_mode: host 
-    image: fedora:39
-    command: |
-      /bin/bash -c "echo 'warmuping'; sleep 5;
-        for i in $(seq 1 50);
-        do echo -n '.' ;
-        curl -s -X GET http://localhost:9999/clientes/5/extrato > /dev/null  &
-        curl -s -X POST -H 'Content-Type: application/json' -d '{\"valor\": 0, \"tipo\": \"d\", \"descricao\": \"warmupsh\"}' http:///localhost:9000/clientes/5/transacoes > /dev/null &
-      done; echo 'warmup done';"
-    deploy:
-      resources: 
-        limits:
-          cpus: "0.02"
-          memory: "16MB"
 
   
   db:
@@ -150,7 +133,7 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./init.postgresql.cached.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.3tables.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
