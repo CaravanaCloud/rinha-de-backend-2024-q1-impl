@@ -110,7 +110,9 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=123
+  
   postgres-exporter:
+    network_mode: host 
     image: prometheuscommunity/postgres-exporter
     ports:
       - 9187:9187
