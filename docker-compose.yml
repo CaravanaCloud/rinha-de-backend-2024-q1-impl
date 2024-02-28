@@ -44,7 +44,7 @@ services:
       resources:
         limits:
           cpus: "0.40"
-          memory: "225MB"
+          memory: "120MB"
 
   api02:
     network_mode: host
@@ -87,7 +87,7 @@ services:
       resources:
         limits:
           cpus: "0.40"
-          memory: "225MB"
+          memory: "120MB"
 
   lb:
     hostname: lb
@@ -156,7 +156,7 @@ services:
       resources: 
         limits:
           cpus: "0.50"
-          memory: "50MB"
+          memory: "260MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
