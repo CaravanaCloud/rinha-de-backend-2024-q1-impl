@@ -7,7 +7,8 @@ tasks:
       ./install-gatling.sh
       mvn -f ./rinhadebackend install
     command: |
-      mvn -f ./rinhadebackend quarkus:dev
+      cd ./rinhadebackend
+      quarkus dev
 
   - name: Start Servers
     command: |
