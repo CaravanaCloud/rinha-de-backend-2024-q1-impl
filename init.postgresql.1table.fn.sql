@@ -114,8 +114,8 @@ BEGIN
         WHERE cliente_id = p_cliente_id
         ORDER BY realizada_em DESC
         LIMIT 1
-        INTO v_saldo 
-    FOR UPDATE;
+        INTO v_saldo;
+    -- FOR UPDATE;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_cliente_id;
