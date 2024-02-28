@@ -1,4 +1,4 @@
-CREATE UNLOGGED TABLE transacoes (
+CREATE TABLE transacoes (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
@@ -53,7 +53,7 @@ BEGIN
     -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
+    lock table transacoes in ACCESS EXCLUSIVE mode;
 
     -- invoke limite_cliente into v_limite
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
@@ -61,7 +61,7 @@ BEGIN
     SELECT saldo 
         FROM transacoes
         WHERE cliente_id = p_cliente_id
-        ORDER BY realizada_em DESC
+        ORDER BY realizada_em DESC, id DESC
         LIMIT 1
         INTO v_saldo;
 
@@ -108,13 +108,13 @@ BEGIN
     -- PERFORM pg_try_advisory_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS SHARE mode;
+    lock table transacoes in ACCESS SHARE mode;
     PERFORM pg_advisory_xact_lock(p_cliente_id);
 
     SELECT saldo 
         FROM transacoes
         WHERE cliente_id = p_cliente_id
-        ORDER BY realizada_em DESC
+        ORDER BY realizada_em DESC, id DESC
         LIMIT 1
         INTO v_saldo;
     -- FOR UPDATE;
@@ -135,7 +135,7 @@ BEGIN
                 SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD HH:MI:SS.US') as realizada_em
                 FROM transacoes
                 WHERE cliente_id = p_cliente_id
-                ORDER BY realizada_em DESC
+                ORDER BY realizada_em DESC, id DESC 
                 LIMIT 10
             ) t
         ), '[]')
