@@ -141,7 +141,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=serial,-R:MaximumHeapSizePercent=95,-R:MaximumYoungGenerationSizePercent=50,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=g1,-R:MaxRAMPercentage=95,--install-exit-handlers</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
