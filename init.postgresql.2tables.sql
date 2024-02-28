@@ -49,7 +49,7 @@ BEGIN
         FOR UPDATE;
 
     IF p_tipo = 'd' AND ((v_saldo - p_valor) < (-1 * v_limite)) THEN
-            result.body := 'LIMITE_INDISPONIVEL';
+            result.body := '{"erro": "Saldo insuficiente"}';
             result.status_code := 422;
             RETURN result;
     END IF;
@@ -98,7 +98,7 @@ BEGIN
         WHEN 3 THEN 1000000
         WHEN 4 THEN 10000000
         WHEN 5 THEN 500000
-        ELSE -1 -- Valor padrão caso o id do cliente não esteja entre 1 e 5
+        ELSE -1 
     END;
 
     SELECT json_build_object(

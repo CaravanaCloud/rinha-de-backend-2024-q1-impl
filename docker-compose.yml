@@ -150,7 +150,7 @@ services:
       - "5400"
     volumes:
       - ./init.postgresql.1table.fn.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./postgresql.dev.conf:/etc/postgresql/postgresql.conf
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
       resources: 
