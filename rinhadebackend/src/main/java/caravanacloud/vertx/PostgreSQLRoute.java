@@ -89,15 +89,13 @@ public class PostgreSQLRoute {
     }
 
     private Uni<Response> processExtrato(int id) {
-        Uni<Response>  result = client.withTransaction(conn -> {
-            var query = conn.preparedQuery(EXTRATO_QUERY).execute(Tuple.of(id));
-            Uni<Response> response = query.onItem().transform(RowSet::iterator) 
+        return client.withTransaction(conn -> 
+            conn.preparedQuery(EXTRATO_QUERY)
+                .execute(Tuple.of(id))
+                .onItem().transform(RowSet::iterator) 
                 .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
                 .onItem().transform(r -> r != null ? responseOf(r) : null)
-                .onFailure().recoverWithItem(e -> errorOf(e,"err_extrato")); 
-            return response;
-        });
-        return result;
+                .onFailure().recoverWithItem(e -> errorOf(e,"err_extrato"))); 
     }
 
     @Path("/{id}/transacoes")
@@ -136,16 +134,14 @@ public class PostgreSQLRoute {
             return Uni.createFrom().item(errorOf("descricao invalida", 422));
         }
 
-        Uni<Response>  result = client.withTransaction(conn -> {
-            var query = conn.preparedQuery(TRANSACAO_QUERY)
-            .execute(Tuple.of(shard, id, valorFinal, tipo, descricao));
-
-            Uni<Response> resp = query.onItem().transform(RowSet::iterator)
-                    .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-                    .onItem().transform(r -> r != null ? responseOf(r) : null)
-                    .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));
-            return resp;
-        });
+        Uni<Response>  result = client.withTransaction(
+            conn -> conn.preparedQuery(TRANSACAO_QUERY)
+                .execute(Tuple.of(shard, id, valorFinal, tipo, descricao))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
+                .onItem().transform(r -> r != null ? responseOf(r) : null)
+                .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));
+        
         return result;
     }
 
