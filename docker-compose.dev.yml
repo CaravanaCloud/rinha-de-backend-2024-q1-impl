@@ -60,7 +60,7 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./init.postgresql.2tables.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.1table.fn.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.dev.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
@@ -79,6 +79,8 @@ services:
   # Jaeger service
   jaeger:
     network_mode: host
+    hostname: jaeger
+    container_name: jaeger
     image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"
@@ -95,6 +97,8 @@ services:
   # Prometheus service
   prometheus:
     network_mode: host
+    hostname: prom
+    container_name: prom
     image: prom/prometheus:latest
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -105,6 +109,8 @@ services:
   # Grafana service
   grafana:
     network_mode: host
+    hostname: grafana
+    container_name: grafana
     image: grafana/grafana:latest
     ports:
       - "3000:3000"

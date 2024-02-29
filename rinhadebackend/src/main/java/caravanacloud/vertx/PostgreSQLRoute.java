@@ -36,18 +36,18 @@ public class PostgreSQLRoute {
     Vertx vertx;
 
     @Inject
-    PgPool client; 
+    PgPool client;
 
     public void onStartup(@Observes StartupEvent event) {
         shard = envInt("RINHA_SHARD", 0);
-        System.out.println("StartupEvent shard["+ shard +"] version["+VERSION_ID+"] 🐔💥");
+        System.out.println("StartupEvent shard[" + shard + "] version[" + VERSION_ID + "] 🐔💥");
         boolean ready = false;
         do {
             try {
                 for (int i = 0; i < WARMUP_LEVEL; i++) {
                     warmup();
                     processExtrato(333);
-                    processTransacao(333, Map.of("valor", "0", "tipo", "c", "descricao", "warmup"));                    
+                    processTransacao(333, Map.of("valor", "0", "tipo", "c", "descricao", "warmup"));
                 }
                 ready = true;
             } catch (Exception e) {
@@ -62,22 +62,21 @@ public class PostgreSQLRoute {
         } while (!ready);
     }
 
-
     private void warmup() {
         var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
         Log.info("Warmup query: " + query);
         client.preparedQuery(query)
-            .execute()
-            .await()
-            .atMost(Duration.ofSeconds(30));
+                .execute()
+                .await()
+                .atMost(Duration.ofSeconds(30));
         Log.info("Warmup done");
     }
 
     private boolean invalid(int id) {
-        return  id > 5 || id < 1;
-	}
+        return id > 5 || id < 1;
+    }
 
-    @GET                                                                                   
+    @GET
     @Path("/{id}/extrato")
     public Uni<Response> doGet(@PathParam("id") int id) {
         if (invalid(id)) {
@@ -85,34 +84,37 @@ public class PostgreSQLRoute {
         }
         var result = processExtrato(id);
         // .onItem().ifNull().continueWith(Response.status(422).build())
-        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());                                           
-        return resp;  
+        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());
+        return resp;
     }
 
-	private Uni<Response> processExtrato(int id) {
-        var query = client.preparedQuery(EXTRATO_QUERY).execute(Tuple.of(id));
-        Uni<Response> result = query.onItem().transform(RowSet::iterator) 
-            .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(r -> r != null ? responseOf(r) : null)
-            .onFailure().recoverWithItem(e -> errorOf(e,"err_extrato")); 
+    private Uni<Response> processExtrato(int id) {
+        Uni<Response>  result = client.withTransaction(conn -> {
+            var query = conn.preparedQuery(EXTRATO_QUERY).execute(Tuple.of(id));
+            Uni<Response> response = query.onItem().transform(RowSet::iterator) 
+                .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
+                .onItem().transform(r -> r != null ? responseOf(r) : null)
+                .onFailure().recoverWithItem(e -> errorOf(e,"err_extrato")); 
+            return response;
+        });
         return result;
     }
 
     @Path("/{id}/transacoes")
     @Consumes("application/json")
     @POST
-    public Uni<Response> doPost(@PathParam("id") int id,  Map<String, String> txx) {
+    public Uni<Response> doPost(@PathParam("id") int id, Map<String, String> txx) {
         if (invalid(id)) {
             return Uni.createFrom().item(Response.status(404).build());
         }
         var result = processTransacao(id, txx);
-        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());                                
-        return resp;  
+        var resp = result.onItem().transform(r -> r != null ? r : Response.status(422).build());
+        return resp;
     }
 
-	private Uni<Response> processTransacao(int id, Map<String, String> txx) {
+    private Uni<Response> processTransacao(int id, Map<String, String> txx) {
         var valorNumber = txx.get("valor");
-		if (valorNumber == null || valorNumber.contains(".")) {
+        if (valorNumber == null || valorNumber.contains(".")) {
             return Uni.createFrom().item(errorOf("valor invalido", 422));
         }
 
@@ -122,6 +124,7 @@ public class PostgreSQLRoute {
         } catch (NumberFormatException e) {
             return Uni.createFrom().item(errorOf("valor invalido", 422));
         }
+        final int valorFinal = valor;
 
         String tipo = txx.get("tipo");
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
@@ -133,15 +136,18 @@ public class PostgreSQLRoute {
             return Uni.createFrom().item(errorOf("descricao invalida", 422));
         }
 
-        var query = client.preparedQuery(TRANSACAO_QUERY)
-            .execute(Tuple.of(shard, id, valor, tipo, descricao));
+        Uni<Response>  result = client.withTransaction(conn -> {
+            var query = conn.preparedQuery(TRANSACAO_QUERY)
+            .execute(Tuple.of(shard, id, valorFinal, tipo, descricao));
 
-        Uni<Response> result = query.onItem().transform(RowSet::iterator) 
-            .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
-            .onItem().transform(r -> r != null ? responseOf(r) : null)
-            .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));  
+            Uni<Response> resp = query.onItem().transform(RowSet::iterator)
+                    .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
+                    .onItem().transform(r -> r != null ? responseOf(r) : null)
+                    .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));
+            return resp;
+        });
         return result;
-	}
+    }
 
     private static int envInt(String varName, int defaultVal) {
         var result = System.getenv(varName);
@@ -163,11 +169,11 @@ public class PostgreSQLRoute {
     }
 
     private Response errorOf(Throwable e, String key) {
-        return  Response.status(422).entity("{\""+key+"\": \""+e.getMessage()+"\"}").build();
+        return Response.status(422).entity("{\"" + key + "\": \"" + e.getMessage() + "\"}").build();
     }
 
     private Response errorOf(String e, int status) {
-        return  Response.status(status).entity("{\"err\": \""+e+"\"}").build();
+        return Response.status(status).entity("{\"err\": \"" + e + "\"}").build();
     }
 
     private Response responseOf(Row r) {
