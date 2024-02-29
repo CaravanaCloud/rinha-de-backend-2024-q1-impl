@@ -140,7 +140,7 @@ public class PostgreSQLRoute {
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? iterator.next() : null)
                 .onItem().transform(r -> r != null ? responseOf(r) : null)
-                .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao"));
+                .onFailure().recoverWithItem(e -> errorOf(e, "err_transacao")));
         
         return result;
     }
