@@ -4,7 +4,7 @@ services:
 
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.3-pgsql-serial-90-33
+    image: caravanacloud/rinhadebackend-native:0.0.4-pgsql-g1-95
     hostname: api01
     container_name: api01
     depends_on:
@@ -48,7 +48,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.3-pgsql-serial-90-33
+    image: caravanacloud/rinhadebackend-native:0.0.4-pgsql-g1-95
     hostname: api02
     container_name: api02
     depends_on:
@@ -149,7 +149,7 @@ services:
     expose:
       - "5400"
     volumes:
-      - ./init.postgresql.1table.fn.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.postgresql.2tables.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: 'postgres -c config_file=/etc/postgresql/postgresql.conf'  
     deploy:
