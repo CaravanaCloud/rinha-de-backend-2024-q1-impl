@@ -8,12 +8,7 @@ CREATE TABLE transacoes (
     saldo INTEGER NOT NULL
 );
 
-INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em, saldo) VALUES
-    (1 , 0, 'c', 'init', clock_timestamp(), 0),
-    (2 , 0, 'c', 'init', clock_timestamp(), 0),
-    (3 , 0, 'c', 'init', clock_timestamp(), 0),
-    (4 , 0, 'c', 'init', clock_timestamp(), 0),
-    (5 , 0, 'c', 'init', clock_timestamp(), 0);
+
 
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;
@@ -49,9 +44,10 @@ DECLARE
     result json_result;
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_advisory_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
+    -- 
     -- lock table clientes in ACCESS EXCLUSIVE mode;
     lock table transacoes in ACCESS EXCLUSIVE mode;
 
@@ -63,7 +59,12 @@ BEGIN
         WHERE cliente_id = p_cliente_id
         ORDER BY realizada_em DESC, id DESC
         LIMIT 1
-        INTO v_saldo;
+        INTO v_saldo
+        FOR UPDATE;
+    
+    IF NOT FOUND THEN
+        V_saldo := 0;
+    END IF;
 
     IF p_tipo = 'd' THEN
         diff := p_valor * -1;            
@@ -103,24 +104,25 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
+    PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_xact_lock(42);
     -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
     -- PERFORM pg_try_advisory_lock(p_cliente_id);
     -- PERFORM pg_advisory_xact_lock(p_cliente_id);
     -- lock table clientes in ACCESS EXCLUSIVE mode;
-    lock table transacoes in ACCESS SHARE mode;
-    PERFORM pg_advisory_xact_lock(p_cliente_id);
+    lock table transacoes in ACCESS EXCLUSIVE mode;
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
 
     SELECT saldo 
         FROM transacoes
         WHERE cliente_id = p_cliente_id
         ORDER BY realizada_em DESC, id DESC
         LIMIT 1
-        INTO v_saldo;
-    -- FOR UPDATE;
+        INTO v_saldo
+        FOR UPDATE;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'CLIENTE_NAO_ENCONTRADO %', p_cliente_id;
+        V_saldo := 0;
     END IF;
 
     SELECT limite_cliente(p_cliente_id) INTO v_limite;
