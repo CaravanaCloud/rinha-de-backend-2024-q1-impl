@@ -39,35 +39,28 @@ CREATE OR REPLACE FUNCTION proc_transacao(p_shard INT, p_cliente_id INT, p_valor
 RETURNS json_result as $$
 DECLARE
     diff INT;
+    n_saldo INT;
     v_saldo INT;
     v_limite INT;
     result json_result;
 BEGIN
     PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_advisory_lock(p_cliente_id);
-    -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- 
-    -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
 
-    -- invoke limite_cliente into v_limite
-    SELECT limite_cliente(p_cliente_id) INTO v_limite;
-    
     SELECT saldo 
         FROM transacoes
         WHERE cliente_id = p_cliente_id
         ORDER BY realizada_em DESC, id DESC
         LIMIT 1
-        INTO v_saldo
-        FOR UPDATE;
+        INTO v_saldo;
     
     IF NOT FOUND THEN
         V_saldo := 0;
     END IF;
 
+    SELECT limite_cliente(p_cliente_id) INTO v_limite;
+
     IF p_tipo = 'd' THEN
-        diff := p_valor * -1;            
+        diff := p_valor * -1;
         IF (v_saldo + diff) < (-1 * v_limite) THEN
             result.body := '{"erro": "Saldo insuficiente"}';
             result.status_code := 422;
@@ -76,14 +69,14 @@ BEGIN
     ELSE
         diff := p_valor;
     END IF;
-
     
     INSERT INTO transacoes 
                      (cliente_id,   valor,   tipo,   descricao,      realizada_em, saldo)
-            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(), v_saldo + diff);
+            VALUES (p_cliente_id, p_valor, p_tipo, p_descricao, now(), v_saldo + diff)
+            RETURNING saldo INTO n_saldo;
 
     SELECT json_build_object(
-        'saldo', v_saldo + diff,
+        'saldo', n_saldo,
         'limite', v_limite
     ) into result.body;
     result.status_code := 200;
@@ -104,22 +97,14 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
-    PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_try_advisory_xact_lock(42);
-    -- PERFORM pg_try_advisory_xact_lock(p_cliente_id);
-    -- PERFORM pg_try_advisory_lock(p_cliente_id);
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
-    -- lock table clientes in ACCESS EXCLUSIVE mode;
-    -- lock table transacoes in ACCESS EXCLUSIVE mode;
-    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
+    PERFORM pg_advisory_xact_lock(p_cliente_id);   
 
     SELECT saldo 
         FROM transacoes
         WHERE cliente_id = p_cliente_id
         ORDER BY realizada_em DESC, id DESC
         LIMIT 1
-        INTO v_saldo
-        FOR UPDATE;
+        INTO v_saldo;
 
     IF NOT FOUND THEN
         V_saldo := 0;

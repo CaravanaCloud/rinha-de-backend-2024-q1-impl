@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "## Checking registry authentication"
 docker login
 
-TAG="0.0.4-pgsql-g1-95"
+TAG="0.0.4-pgservlet-locks"
 
 echo "## Building $TAG"
 docker build \

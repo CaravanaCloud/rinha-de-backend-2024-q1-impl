@@ -42,22 +42,16 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-vertx</artifactId>
+      <artifactId>quarkus-agroal</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-reactive-pg-client</artifactId>
+      <artifactId>quarkus-undertow</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
+      <artifactId>quarkus-jdbc-postgresql</artifactId>
     </dependency>
-    <!-->
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-epoll</artifactId>
-      <classifier>linux-x86_64</classifier>
-    </dependency>
-    -->
   </dependencies>
   <build>
     <plugins>
@@ -124,12 +118,12 @@
       </activation>
       <dependencies>
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-opentelemetry</artifactId>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-opentelemetry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
         </dependency>
       </dependencies>
     </profile>
