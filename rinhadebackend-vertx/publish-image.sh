@@ -5,14 +5,14 @@ echo "## Checking registry authentication"
 docker login
 mvn clean
 
-TAG="0.0.5-jvm-uring"
+TAG="0.0.5-native-uring"
 
 echo "## Building $TAG"
 docker build \
-    -f "$DIR/src/main/docker/Dockerfile.jvm" \
+    -f "$DIR/src/main/docker/Dockerfile.native" \
     --no-cache \
     --progress=plain \
-    -t caravanacloud/rinhadebackend-jvm:$TAG "$DIR"
+    -t caravanacloud/rinhadebackend-native:$TAG "$DIR"
 
 docker push caravanacloud/rinhadebackend-native:$TAG
 
