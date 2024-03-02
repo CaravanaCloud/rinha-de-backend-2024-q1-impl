@@ -22,9 +22,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
-@Path("/vertx/clientes")
+@Path("/clientes")
 public class PostgreSQLRoute {
-    private static final String VERSION_ID = "0.0.3-pgsql";
+    private static final String VERSION_ID = "0.0.5";
     private static final String EXTRATO_QUERY = "select * from proc_extrato($1)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao($1, $2, $3, $4, $5)";
     private static final String WARMUP_QUERY = "select 1+1;";

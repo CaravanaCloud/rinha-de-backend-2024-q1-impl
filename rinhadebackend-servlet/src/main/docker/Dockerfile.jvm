@@ -31,7 +31,7 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 USER $USERNAME
 
 ## Setup JDK
-ARG JAVA_SDK="21.0.2-graalce"
+ARG JAVA_SDK="21.0.2-graal"
 RUN curl -s "https://get.sdkman.io" | bash 
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && sdk install java $JAVA_SDK \
@@ -78,5 +78,6 @@ RUN ls -liah "$CP_TO/quarkus-run.jar"
 
 EXPOSE 9990
 
-ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=80.0"
+# ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=80.0"
+ARG JAVA_XARGS=""
 ENTRYPOINT java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar

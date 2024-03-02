@@ -3,15 +3,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "## Checking registry authentication"
 docker login
+mvn clean
 
-TAG="0.0.4-pgsql-g1-95"
+TAG="0.0.5-jvm-jlink"
 
 echo "## Building $TAG"
 docker build \
-    -f "$DIR/src/main/docker/Dockerfile.native" \
+    -f "$DIR/src/main/docker/Dockerfile.jvm" \
     --no-cache \
     --progress=plain \
-    -t caravanacloud/rinhadebackend-native:$TAG "$DIR"
+    -t caravanacloud/rinhadebackend-jvm:$TAG "$DIR"
 
 docker push caravanacloud/rinhadebackend-native:$TAG
 

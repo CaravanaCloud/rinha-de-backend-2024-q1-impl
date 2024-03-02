@@ -4,11 +4,11 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "## Checking registry authentication"
 docker login
 
-TAG="0.0.4-pgservlet-locks"
+TAG="0.0.4-jvm"
 
 echo "## Building $TAG"
 docker build \
-    -f "$DIR/src/main/docker/Dockerfile.native" \
+    -f "$DIR/src/main/docker/Dockerfile.jvm" \
     --no-cache \
     --progress=plain \
     -t caravanacloud/rinhadebackend-native:$TAG "$DIR"

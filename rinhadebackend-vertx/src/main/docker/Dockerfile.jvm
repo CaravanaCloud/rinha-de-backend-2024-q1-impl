@@ -31,7 +31,8 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 USER $USERNAME
 
 ## Setup JDK
-ARG JAVA_SDK="21.0.2-graalce"
+ENV JAVA_HOME=/home/$USERNAME/.sdkman/candidates/java/current
+ARG JAVA_SDK="21.0.2-graal"
 RUN curl -s "https://get.sdkman.io" | bash 
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && sdk install java $JAVA_SDK \
@@ -50,11 +51,18 @@ ARG MVN_XOPTS="-fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.tra
 RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
     && mvn $MVN_XOPTS install"
 
+## Link
+# jdeps --ignore-missing-deps --multi-release=21 --list-deps rinhadebackend-0.0.1-runner.jar
+ARG JAVA_MODULES="java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.rmi,java.security.sasl,java.sql,java.transaction.xa,java.xml,jdk.compiler,jdk.compiler,jdk.unsupported,org.graalvm.nativeimage,org.graalvm.word"
+RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
+    && jlink --add-modules $JAVA_MODULES --compress=zip-2 --no-header-files --no-man-pages --output ./target/jre"
+
+
 ### RUNTIME STAGE ###
 FROM fedora:39
 
 USER root
-RUN bash -c "dnf install -y zip unzip java-21-openjdk"
+# RUN bash -c "dnf install -y zip unzip"
 
 # Create user
 ARG USERNAME=container-user
@@ -68,15 +76,17 @@ USER $USERNAME
 RUN mkdir -p "/home/$USERNAME/quarkus-app"
 WORKDIR "/home/$USERNAME/quarkus-app"
 
-ARG CP_FROM="/home/container-user/quarkus-app/target/quarkus-app"
+ARG CP_FROM="/home/container-user/quarkus-app/target/"
 ARG CP_TO=$CP_FROM
 RUN mkdir -p "$CP_TO"
 
 COPY --from=build --chown=$USERNAME $CP_FROM $CP_TO
 
-RUN ls -liah "$CP_TO/quarkus-run.jar"
+RUN find "$CP_TO"
 
 EXPOSE 9990
 
-ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=80.0"
-ENTRYPOINT java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/quarkus-app/quarkus-run.jar
+ARG JAVA_XARGS="-XX:+UseSerialGC -XX:InitialRAMPercentage=95.0"
+ARG JAVA_XARGS=""
+ENTRYPOINT /home/container-user/quarkus-app/target/jre/bin/java $JAVA_XARGS -jar /home/container-user/quarkus-app/target/rinhadebackend-0.0.1-runner.jar 
+
