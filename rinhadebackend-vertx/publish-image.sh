@@ -5,7 +5,7 @@ echo "## Checking registry authentication"
 docker login
 mvn clean
 
-TAG="0.0.5-jvm-jlink"
+TAG="0.0.5-jvm-uring"
 
 echo "## Building $TAG"
 docker build \

@@ -4,7 +4,7 @@ services:
 
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.5-jvm-jlink
+    image: caravanacloud/rinhadebackend-jvm:0.0.5-jvm-uring
     hostname: api01
     container_name: api01
     depends_on:
@@ -48,7 +48,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.5-jvm-jlink
+    image: caravanacloud/rinhadebackend-jvm:0.0.5-jvm-uring
     hostname: api02
     container_name: api02
     depends_on:
