@@ -28,18 +28,17 @@ ARG USER_GID=$USER_UID
 RUN groupadd --gid $USER_GID $USERNAME 
 RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 
+# Download and extract GraalVM Early Access
+ARG GRAALVM_URL="https://github.com/graalvm/oracle-graalvm-ea-builds/releases/download/jdk-23.0.0-ea.01/graalvm-jdk-23.0.0-ea.01_linux-x64_bin.tar.gz"
+RUN curl -L $GRAALVM_URL | tar -xz -C /usr/local
+RUN find /usr/local
+
+# Set JAVA_HOME and add java to PATH
+ENV JAVA_HOME=/usr/local/graalvm-jdk-23.0.0-ea.01
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
 # User level
 USER $USERNAME
-
-## Setup JDK
-ARG JAVA_SDK="21.0.2-graal"
-RUN curl -s "https://get.sdkman.io" | bash 
-RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
-    && sdk install java $JAVA_SDK \
-    && sdk default java $JAVA_SDK \
-    && sdk install quarkus \
-    && sdk install maven \
-    "
 
 ## Copy source code
 RUN mkdir -p "/home/$USERNAME/quarkus-app"
@@ -49,9 +48,9 @@ COPY --chown=$USERNAME . .
 RUN ls -liah profile.iprof
 
 ## Build
+ENV JAVA_HOME=/usr/local/graalvm-jdk-23+11.1
 ARG MVN_XOPTS="-Dnative  -fn -B -ntp -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-RUN bash -c ". $HOME/.sdkman/bin/sdkman-init.sh \
-    && mvn $MVN_XOPTS install"
+RUN bash -c "./mvnw $MVN_XOPTS install"
 
 ### RUNTIME STAGE ###
 # TODO FROM scratch
