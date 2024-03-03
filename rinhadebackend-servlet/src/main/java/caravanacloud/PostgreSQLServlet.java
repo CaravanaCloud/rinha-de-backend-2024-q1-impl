@@ -259,11 +259,13 @@ public class PostgreSQLServlet extends HttpServlet {
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
             
             var isolation = conn.getTransactionIsolation();
-            Log.infof("Isolation level: %s on transacao", isolation);
+            var autocomm = conn.getAutoCommit();
+            Log.infof("Isolation [%s] AutoCommit [%s] on transacao", isolation, autocomm);
             
             lock.setInt(1, id);
             lock.execute();
-            stmt.setInt(1, this.shard);
+
+            stmt.setInt(1, shard);
             stmt.setInt(2, id);
             stmt.setInt(3, valor);
             stmt.setString(4, tipo);
