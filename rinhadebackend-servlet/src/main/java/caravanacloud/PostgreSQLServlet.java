@@ -110,7 +110,8 @@ public class PostgreSQLServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id != null) {
-            QuarkusTransaction.requiringNew().run(() -> doExtrato(id, resp));
+            // QuarkusTransaction.requiringNew().run(() -> doExtrato(id, resp));
+            doExtrato(id, resp);
         } else {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
         }
@@ -217,7 +218,8 @@ public class PostgreSQLServlet extends HttpServlet {
             String tipo = mTipo.group(1);
             String descricao = mDescricao.group(1);
 
-            QuarkusTransaction.requiringNew().run(() -> doTransacao(id, valor, tipo, descricao, resp));
+            //QuarkusTransaction.requiringNew().run(() -> doTransacao(id, valor, tipo, descricao, resp));
+            doTransacao(id, valor, tipo, descricao, resp);
             
         } else {
             sendError(resp, 422, "Corpo da requisição JSON inválido ou incompleto.");
@@ -278,7 +280,7 @@ public class PostgreSQLServlet extends HttpServlet {
                     if (resp == null)
                         return;
                     resp.setStatus(status);
-                    resp.setHeader("x-rinha-shard", this.shard.toString());
+                    resp.setHeader("x-rinha-shard", shard.toString());
                     resp.setContentType("application/json");
                     resp.setCharacterEncoding("UTF-8");
                     resp.getWriter().write(body);
