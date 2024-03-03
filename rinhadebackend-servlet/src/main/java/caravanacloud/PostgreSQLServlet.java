@@ -24,6 +24,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.narayana.jta.RunOptions;
+
 @WebServlet(value = "/*")
 @Transactional
 public class PostgreSQLServlet extends HttpServlet {
@@ -107,7 +110,7 @@ public class PostgreSQLServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id != null) {
-            doExtrato(id, resp);
+            QuarkusTransaction.requiringNew().run(() -> doExtrato(id, resp));
         } else {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
         }
@@ -127,10 +130,14 @@ public class PostgreSQLServlet extends HttpServlet {
         return Integer.valueOf(id);
     }
 
-    private void doExtrato(Integer id, HttpServletResponse resp) throws IOException {
+    private void doExtrato(Integer id, HttpServletResponse resp) {
         try (var conn = ds.getConnection();
              var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
              var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
+
+            //var isolation = conn.getTransactionIsolation();
+            //Log.infof("Isolation level: %s on extrato", isolation);
+
             lock.setInt(1, id);
             lock.execute();
             stmt.setInt(1, id);
@@ -163,11 +170,16 @@ public class PostgreSQLServlet extends HttpServlet {
         }
     }
 
-    private void sendError(HttpServletResponse resp, int sc, String msg) throws IOException {
+    private void sendError(HttpServletResponse resp, int sc, String msg) {
         if (sc == 500)
             Log.warn(msg);
         if (resp != null)
+        try {
             resp.sendError(sc, msg);
+        } catch (Exception e) {
+            Log.errorf(e, "Error sending error %s", e.getMessage());
+        } 
+           
         else
             Log.warnf("[%s] %s", sc, msg);
     }
@@ -205,18 +217,15 @@ public class PostgreSQLServlet extends HttpServlet {
             String tipo = mTipo.group(1);
             String descricao = mDescricao.group(1);
 
-            // Agora você pode usar os valores extraídos para processar a transação
-            // Este é um exemplo de como você pode prosseguir, ajuste de acordo com sua
-            // lógica de negócios
-            doTransacao(id, valor, tipo, descricao, resp);
+            QuarkusTransaction.requiringNew().run(() -> doTransacao(id, valor, tipo, descricao, resp));
+            
         } else {
             sendError(resp, 422, "Corpo da requisição JSON inválido ou incompleto.");
         }
         return;
     }
 
-    private void doTransacao(Integer id, String valorNumber, String tipo, String descricao, HttpServletResponse resp)
-            throws IOException {
+    private void doTransacao(Integer id, String valorNumber, String tipo, String descricao, HttpServletResponse resp) {
         // Validate and process the transaction as in the original resource
         if (valorNumber == null || valorNumber.contains(".")) {
             if (resp != null)
@@ -248,6 +257,10 @@ public class PostgreSQLServlet extends HttpServlet {
         try (var conn = ds.getConnection();
                 var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
+            
+            var isolation = conn.getTransactionIsolation();
+            Log.infof("Isolation level: %s on transacao", isolation);
+            
             lock.setInt(1, id);
             lock.execute();
             stmt.setInt(1, this.shard);
@@ -279,7 +292,7 @@ public class PostgreSQLServlet extends HttpServlet {
         }
     }
 
-    private void handleSQLException(SQLException e, HttpServletResponse resp) throws IOException {
+    private void handleSQLException(SQLException e, HttpServletResponse resp)  {
         var msg = e.getMessage();
         if (msg.contains("LIMITE_INDISPONIVEL")) {
             sendError(resp, 422, "Erro: Limite indisponivel");

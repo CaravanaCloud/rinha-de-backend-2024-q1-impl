@@ -8,7 +8,8 @@ CREATE TABLE transacoes (
     saldo INTEGER NOT NULL
 );
 
-
+CREATE INDEX transacoes_idx ON transacoes(cliente_id);
+SET enable_seqscan=off;
 
 
 CREATE EXTENSION IF NOT EXISTS pg_prewarm;

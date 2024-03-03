@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>caravanacloud</groupId>
-  <artifactId>rinhadebackend</artifactId>
+  <artifactId>rinhadebackend-servlet</artifactId>
   <version>0.0.1</version>
   <properties>
     <compiler-plugin.version>3.12.1</compiler-plugin.version>
@@ -26,13 +26,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-bom</artifactId>
-        <version>14.0.24.Final</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -51,6 +44,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-narayana-jta</artifactId>
     </dependency>
   </dependencies>
   <build>
