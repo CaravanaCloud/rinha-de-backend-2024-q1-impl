@@ -1,9 +1,6 @@
 listen_addresses = '*'
 port = 5400
 
-# transaction isolation read repeatable
-default_transaction_isolation = 'repeatable read'
-
 # Memory
 # https://pgtune.leopard.in.ua/
 shared_buffers = 65MB
@@ -41,16 +38,16 @@ max_locks_per_transaction = 64    # Adjust based on your application's locking r
 
 # Logging
 
-# log_min_duration_statement = '10s' 
-# log_checkpoints = off               
-# log_statement = 'none'
-# log_error_verbosity = terse
-# log_min_messages = panic
-# logging_collector = off
-# log_directory = '/dev/null'
-# log_min_error_statement = panic
-# client_min_messages = error
-# debug_pretty_print = off
+log_min_duration_statement = '10s' 
+log_checkpoints = off               
+log_statement = 'none'
+log_error_verbosity = terse
+log_min_messages = panic
+logging_collector = off
+log_directory = '/dev/null'
+log_min_error_statement = panic
+client_min_messages = error
+debug_pretty_print = off
 
 # Autovacuum
 autovacuum = off                    # Enable autovacuum for automatic maintenance
