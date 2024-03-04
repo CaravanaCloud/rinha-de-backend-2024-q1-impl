@@ -26,9 +26,9 @@ import jakarta.transaction.Transactional;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.narayana.jta.RunOptions;
+import io.quarkus.narayana.jta.TransactionExceptionResult;
 
 @WebServlet(value = "/*")
-@Transactional
 public class PostgreSQLServlet extends HttpServlet {
     private static final String EXTRATO_QUERY = "select * from proc_extrato(?)";
     private static final String TRANSACAO_QUERY = "select * from proc_transacao(?, ?, ?, ?, ?)";
@@ -40,6 +40,7 @@ public class PostgreSQLServlet extends HttpServlet {
     private static final Pattern pValor = Pattern.compile(valorPattern);
     private static final Pattern pTipo = Pattern.compile(tipoPattern);
     private static final Pattern pDescricao = Pattern.compile(descricaoPattern);
+    private static final int RETRIES_MAX = 10;
 
     private Integer shard;
 
@@ -47,19 +48,20 @@ public class PostgreSQLServlet extends HttpServlet {
     DataSource ds;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         this.shard = envInt("RINHA_SHARD", 0);
-        Log.info("PostConstruct shard["+shard+"] 🐔💥");
+        Log.info("PostConstruct shard[" + shard + "] 🐔💥");
     }
+
     public void onStartup(@Observes StartupEvent event) {
-        Log.info("StartupEvent shard["+shard+"] 🐔💥");
+        Log.info("StartupEvent shard[" + shard + "] 🐔💥");
         var ready = false;
         // create json node
         do {
             try {
                 warmup();
-                doTransacao(333, "0", "c", "onStartup", null);
-                doExtrato(333, null);                
+                tryTransacao(333, "0", "c", "onStartup", null);
+                tryExtrato(333, null);
                 ready = true;
             } catch (Exception e) {
                 Log.errorf(e, "Warmup failed [%s], waiting for db", e.getMessage());
@@ -79,17 +81,17 @@ public class PostgreSQLServlet extends HttpServlet {
             Log.info("Env var " + varName + " not found, using default " + defaultVal);
             return defaultVal;
         }
-        try{
+        try {
             var inte = Integer.valueOf(result);
             Log.info("Env var " + varName + " found, using " + result);
             return inte;
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private void warmup() throws SQLException{
+    private void warmup() throws SQLException {
         var query = getEnv("RINHA_WARMUP_QUERY", WARMUP_QUERY);
         try (var conn = ds.getConnection();
                 var stmt = conn.prepareStatement(query)) {
@@ -110,8 +112,7 @@ public class PostgreSQLServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         var id = getId(req, resp);
         if (id != null) {
-            // QuarkusTransaction.requiringNew().run(() -> doExtrato(id, resp));
-            doExtrato(id, resp);
+            tryExtrato(id, resp);
         } else {
             sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
         }
@@ -122,25 +123,54 @@ public class PostgreSQLServlet extends HttpServlet {
         if (pathInfo == null || pathInfo.length() < 10) {
             return null;
         }
-        var id = pathInfo.substring(10,11);
-        //var id = pathInfo.split("/")[2];
+        var id = pathInfo.substring(10, 11);
+        // var id = pathInfo.split("/")[2];
         var validId = "1".equals(id) || "2".equals(id) || "3".equals(id) || "4".equals(id) || "5".equals(id);
-        if (! validId) {
+        if (!validId) {
             return null;
         }
         return Integer.valueOf(id);
     }
 
-    private void doExtrato(Integer id, HttpServletResponse resp) {
+    private void tryExtrato(Integer id, HttpServletResponse resp) {
+        var retries = 0;
+        do {
+            try {
+                int result = QuarkusTransaction.requiringNew()
+                        .call(() -> {
+                            doExtrato(id, resp);
+                            return 0;
+                        });
+                if (result == 0)
+                    return;
+            } catch (Exception e) {
+                Log.warnf(e, "Error on transacao [%s], retrying", e.getMessage());
+                nap();
+            }
+            retries++;
+        } while (retries < RETRIES_MAX);
+        sendError(resp, SC_INTERNAL_SERVER_ERROR, "Retry limit exceeded");
+    }
+
+    private void nap() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void doExtrato(Integer id, HttpServletResponse resp) throws SQLException, IOException {
         try (var conn = ds.getConnection();
-             var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
-             var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
+                // var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
+                var stmt = conn.prepareStatement(EXTRATO_QUERY)) {
 
-            //var isolation = conn.getTransactionIsolation();
-            //Log.infof("Isolation level: %s on extrato", isolation);
+            // var isolation = conn.getTransactionIsolation();
+            // Log.infof("Isolation level: %s on extrato", isolation);
 
-            lock.setInt(1, id);
-            lock.execute();
+            // lock.setInt(1, id);
+            // lock.execute();
             stmt.setInt(1, id);
             // debug();
             stmt.execute();
@@ -157,17 +187,6 @@ public class PostgreSQLServlet extends HttpServlet {
                     sendError(resp, SC_NOT_FOUND, "Extrato nao encontrado");
                 }
             }
-        } catch (SQLException e) {
-            var msg = e.getMessage();
-            if (msg.contains("CLIENTE_NAO_ENCONTRADO")) {
-                sendError(resp, SC_NOT_FOUND, "Cliente nao encontrado");
-            } else {
-                e.printStackTrace();
-                sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao processar a transacao" + e.getMessage());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao: " + e.getMessage());
         }
     }
 
@@ -175,12 +194,12 @@ public class PostgreSQLServlet extends HttpServlet {
         if (sc == 500)
             Log.warn(msg);
         if (resp != null)
-        try {
-            resp.sendError(sc, msg);
-        } catch (Exception e) {
-            Log.errorf(e, "Error sending error %s", e.getMessage());
-        } 
-           
+            try {
+                resp.sendError(sc, msg);
+            } catch (Exception e) {
+                Log.errorf(e, "Error sending error %s", e.getMessage());
+            }
+
         else
             Log.warnf("[%s] %s", sc, msg);
     }
@@ -218,17 +237,17 @@ public class PostgreSQLServlet extends HttpServlet {
             String tipo = mTipo.group(1);
             String descricao = mDescricao.group(1);
 
-            //QuarkusTransaction.requiringNew().run(() -> doTransacao(id, valor, tipo, descricao, resp));
-            doTransacao(id, valor, tipo, descricao, resp);
-            
+            // QuarkusTransaction.requiringNew().run(() -> doTransacao(id, valor, tipo,
+            // descricao, resp));
+            tryTransacao(id, valor, tipo, descricao, resp);
+
         } else {
             sendError(resp, 422, "Corpo da requisição JSON inválido ou incompleto.");
         }
         return;
     }
 
-    private void doTransacao(Integer id, String valorNumber, String tipo, String descricao, HttpServletResponse resp) {
-        // Validate and process the transaction as in the original resource
+    private void tryTransacao(Integer id, String valorNumber, String tipo, String descricao, HttpServletResponse resp) {
         if (valorNumber == null || valorNumber.contains(".")) {
             if (resp != null)
                 sendError(resp, 422, "Valor invalido");
@@ -243,6 +262,7 @@ public class PostgreSQLServlet extends HttpServlet {
                 sendError(resp, 422, "Valor invalido");
             return;
         }
+        int valorFinal = valor;
 
         if (tipo == null || !("c".equals(tipo) || "d".equals(tipo))) {
             if (resp != null)
@@ -256,16 +276,34 @@ public class PostgreSQLServlet extends HttpServlet {
             return;
         }
 
+        var retries = 0;
+        do {
+            try {
+                int result = QuarkusTransaction.requiringNew()
+                        .call(() -> {
+                            doTransacao(id, valorFinal, tipo, descricao, resp);
+                            return 0;
+                        });
+                if (result == 0)
+                    return;
+            } catch (Exception e) {
+                Log.warnf("Error on transacao [%s], retrying: %s", e.getMessage());
+                nap();
+            }
+            retries++;
+        } while (retries < RETRIES_MAX);
+        sendError(resp, SC_INTERNAL_SERVER_ERROR, "Retry limit exceeded");
+    }
+
+    private void doTransacao(Integer id, int valor, String tipo, String descricao, HttpServletResponse resp)
+            throws SQLException, IOException {
         try (var conn = ds.getConnection();
-                var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
+                /// var lock = conn.prepareStatement("SELECT pg_advisory_xact_lock(?)");
                 var stmt = conn.prepareStatement(TRANSACAO_QUERY)) {
-            
-            var isolation = conn.getTransactionIsolation();
-            var autocomm = conn.getAutoCommit();
-            Log.infof("Isolation [%s] AutoCommit [%s] on transacao", isolation, autocomm);
-            
-            lock.setInt(1, id);
-            lock.execute();
+
+            //
+            // lock.setInt(1, id);
+            // lock.execute();
 
             stmt.setInt(1, shard);
             stmt.setInt(2, id);
@@ -288,22 +326,6 @@ public class PostgreSQLServlet extends HttpServlet {
                     sendError(resp, SC_INTERNAL_SERVER_ERROR, "No next result from transacao query");
                 }
             }
-        } catch (SQLException e) {
-            handleSQLException(e, resp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro ao processar a transacao " + e.getMessage());
-        }
-    }
-
-    private void handleSQLException(SQLException e, HttpServletResponse resp)  {
-        var msg = e.getMessage();
-        if (msg.contains("LIMITE_INDISPONIVEL")) {
-            sendError(resp, 422, "Erro: Limite indisponivel");
-        } else if (msg.contains("fk_clientes_transacoes_id")) {
-            sendError(resp, SC_NOT_FOUND, "Erro: Cliente inexistente");
-        } else {
-            sendError(resp, SC_INTERNAL_SERVER_ERROR, "Erro SQL ao manipular a transacao: " + e.getMessage());
         }
     }
 }

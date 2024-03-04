@@ -45,7 +45,7 @@ DECLARE
     v_limite INT;
     result json_result;
 BEGIN
-    PERFORM pg_advisory_xact_lock(p_cliente_id);
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);
 
     SELECT saldo 
         FROM transacoes
@@ -98,7 +98,7 @@ DECLARE
     v_saldo numeric;
     v_limite numeric;
 BEGIN
-    PERFORM pg_advisory_xact_lock(p_cliente_id);   
+    -- PERFORM pg_advisory_xact_lock(p_cliente_id);   
 
     SELECT saldo 
         FROM transacoes
