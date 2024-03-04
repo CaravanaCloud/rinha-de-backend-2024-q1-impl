@@ -144,7 +144,10 @@ public class PostgreSQLServlet extends HttpServlet {
                 if (result == 0)
                     return;
             } catch (Exception e) {
-                Log.warnf(e, "Error on transacao [%s], retrying", e.getMessage());
+                if (retries < RETRIES_MAX)
+                    Log.warnf(e, "Error on extrato [%s], retrying");//, e.getMessage());
+                else
+                    Log.errorf(e, "Error on extrato [%s], retry limit exceeded");//, e.getMessage());
                 nap();
             }
             retries++;
@@ -287,7 +290,10 @@ public class PostgreSQLServlet extends HttpServlet {
                 if (result == 0)
                     return;
             } catch (Exception e) {
-                Log.warnf("Error on transacao [%s], retrying: %s", e.getMessage());
+                if (retries < RETRIES_MAX)
+                    Log.warnf( "Error on transacao [%s], retrying"); //, e.getMessage());
+                else
+                    Log.errorf( "Error on transacao [%s], retry limit exceeded");//, e.getMessage());
                 nap();
             }
             retries++;
