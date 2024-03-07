@@ -106,8 +106,8 @@ public class CachedServlet extends HttpServlet {
         Log.info("PostConstruct shard["+shard+"]");
         initCache();
         try {
-            processExtrato(1, null);
-            postTransacao(1, "0", "c", "onStartup", null);
+            processExtrato(333, null);
+            postTransacao(333, "0", "c", "onStartup", null);
             Log.info("StartupEvent shard["+shard+"] ready");
             Log.info("🐔💥");
         } catch (Exception e) {
