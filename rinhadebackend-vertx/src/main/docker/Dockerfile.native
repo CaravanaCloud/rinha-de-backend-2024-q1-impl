@@ -31,14 +31,30 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
 # Download and extract GraalVM Early Access
 ARG GRAALVM_URL="https://github.com/graalvm/oracle-graalvm-ea-builds/releases/download/jdk-23.0.0-ea.01/graalvm-jdk-23.0.0-ea.01_linux-x64_bin.tar.gz"
 RUN curl -L $GRAALVM_URL | tar -xz -C /usr/local
-RUN find /usr/local
 
 # Set JAVA_HOME and add java to PATH
 ENV JAVA_HOME=/usr/local/graalvm-jdk-23.0.0-ea.01
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
+# MUSL
+ARG MUST_URL="https://more.musl.cc/10/x86_64-linux-musl/x86_64-linux-musl-native.tgz"
+RUN curl -L $MUST_URL | tar -xz -C /usr/local
+ENV TOOLCHAIN_DIR="/usr/local/x86_64-linux-musl-native"
+
+# ZLIB
+ARG ZLIB_URL="https://zlib.net/zlib-1.3.1.tar.gz"
+RUN curl -L $ZLIB_URL | tar -xz -C /usr/local
+
+ENV CC="$TOOLCHAIN_DIR/bin/gcc"
+RUN bash -c "cd /usr/local/zlib-1.3.1 && ./configure --prefix=$TOOLCHAIN_DIR --static && make  && make install"
+
+# Check paths
+RUN find /usr/local
+
 # User level
 USER $USERNAME
+ENV PATH="/usr/local/x86_64-linux-musl-native/bin:/usr/local/graalvm-jdk-23.0.0-ea.01/bin:$PATH"
+# RUN bash -c "echo VERFYING MUSL &&  x86_64-linux-musl-gcc"
 
 ## Copy source code
 RUN mkdir -p "/home/$USERNAME/quarkus-app"
@@ -55,31 +71,17 @@ RUN bash -c "./mvnw $MVN_XOPTS install"
 ### RUNTIME STAGE ###
 # TODO FROM scratch
 # TODO 
-FROM fedora:39
+FROM scratch
 # FROM quay.io/quarkus/quarkus-micro-image:2.0
 # FROM ghcr.io/graalvm/native-image-community:21
 LABEL maintainer="Julio Faerman <julio@caravana.cloud>"
 
-
-# Create user
-ARG USERNAME=container-user
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-#RUN groupadd --gid $USER_GID $USERNAME 
-#RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -d "/home/$USERNAME"
-USER root  
-#$USERNAME
-
-# Copy binary
-RUN mkdir -p "/opt/quarkus-app/target/"
-WORKDIR "/opt/quarkus-app"
-
 ARG CP_FROM="/home/container-user/quarkus-app/target/*-runner"
 ARG CP_TO="/opt/quarkus-app/"
-RUN mkdir -p "$CP_TO"
-COPY --from=build $CP_FROM $CP_TO
+# RUN mkdir -p "$CP_TO" 
+COPY --chown=1000 --from=build $CP_FROM $CP_TO
 
 # Container Settings
 EXPOSE 9990
 # TODO: Check if  -XX:MaxRAMPercentage=90 is redundant with same setting in build time
-ENTRYPOINT /opt/quarkus-app/rinhadebackend-0.0.1-runner
+ENTRYPOINT ["/opt/quarkus-app/rinhadebackend-0.0.1-runner"]

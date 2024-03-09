@@ -1,0 +1,31 @@
+## Checking registry authentication
+Authenticating with existing credentials...
+Login Succeeded
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< caravanacloud:rinhadebackend >--------------------
+[INFO] Building rinhadebackend 0.0.1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ rinhadebackend ---
+[INFO] Deleting /workspace/rinha-de-backend-2024-q1-impl/rinhadebackend-vertx/target
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.208 s
+[INFO] Finished at: 2024-03-09T15:09:29Z
+[INFO] ------------------------------------------------------------------------
+## Building 0.0.333-faermanj
+The push refers to repository [docker.io/caravanacloud/rinhadebackend-native]
+a3eb48c53c0a: Preparing
+5f70bf18a086: Preparing
+5f70bf18a086: Preparing
+194d200ed24f: Preparing
+5baaf8a04386: Preparing
+5baaf8a04386: Layer already exists
+194d200ed24f: Layer already exists
+5f70bf18a086: Layer already exists
+a3eb48c53c0a: Layer already exists
+0.0.333-faermanj: digest: sha256:95109f560814f16af046012a8d2c40a976a432287c61c928c4fc3e767bc4eafb size: 1360
+## done

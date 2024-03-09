@@ -51,7 +51,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
+      <artifactId>quarkus-resteasy-reactive</artifactId>
     </dependency>
     
     <dependency>
@@ -155,7 +155,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=95,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>--static,--libc=musl,--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=99,-H:+UseCompressedReferences,--install-exit-handlers</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
