@@ -46,7 +46,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "200MB"
+          memory: "150MB"
 
   api02:
     network_mode: host
@@ -89,7 +89,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "200MB"
+          memory: "150MB"
  
 
   lb:
@@ -120,7 +120,7 @@ services:
       resources:
         limits:
           cpus: "0.20"
-          memory: "25MB"
+          memory: "35MB"
 
   warmup:
     hostname: warmup
@@ -144,7 +144,7 @@ services:
       resources: 
         limits:
           cpus: "0.05"
-          memory: "25MB"
+          memory: "35MB"
 
   
   db:
@@ -168,7 +168,7 @@ services:
       resources: 
         limits:
           cpus: "0.85"
-          memory: "100MB"
+          memory: "180MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
       interval: 3s
