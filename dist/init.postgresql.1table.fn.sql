@@ -54,7 +54,7 @@ BEGIN
     UPDATE clientes 
     SET saldo = n_saldo,
         extrato = CASE 
-                        WHEN jsonb_array_length(extrato) > 10
+                        WHEN (SELECT jsonb_array_length(extrato) FROM clientes WHERE id = p_cliente_id) > 10 
                         THEN jsonb_build_array(
                                 jsonb_build_object(
                                     'valor', p_valor,

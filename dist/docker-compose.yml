@@ -6,7 +6,7 @@ services:
 
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.333-libc95
+    image: caravanacloud/rinhadebackend-native:0.0.333-musl99
     hostname: api01
     container_name: api01
     depends_on:
@@ -50,7 +50,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.333-libc95
+    image: caravanacloud/rinhadebackend-native:0.0.333-musl99
     hostname: api02
     container_name: api02
     depends_on:
@@ -172,3 +172,5 @@ services:
       timeout: 2s
       retries: 10
       start_period: 3s
+
+
