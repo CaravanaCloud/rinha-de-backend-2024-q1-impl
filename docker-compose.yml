@@ -6,7 +6,7 @@ services:
 
   api01:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.333-libc95
+    image: caravanacloud/rinhadebackend-native:0.0.333-musl99
     hostname: api01
     container_name: api01
     depends_on:
@@ -50,7 +50,7 @@ services:
 
   api02:
     network_mode: host
-    image: caravanacloud/rinhadebackend-native:0.0.333-libc95
+    image: caravanacloud/rinhadebackend-native:0.0.333-musl99
     hostname: api02
     container_name: api02
     depends_on:
@@ -90,14 +90,17 @@ services:
         limits:
           cpus: "0.25"
           memory: "200MB"
+ 
 
   lb:
     hostname: lb
     container_name: lb
     network_mode: host 
     image: nginx:latest
+#    image: haproxy:2.9.5-alpine
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#     ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "9999:9999"
 #    depends_on:

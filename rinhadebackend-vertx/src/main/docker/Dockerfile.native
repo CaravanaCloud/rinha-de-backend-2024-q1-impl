@@ -74,7 +74,9 @@ RUN bash -c "./mvnw $MVN_XOPTS install"
 # FROM scratch
 # FROM quay.io/quarkus/quarkus-micro-image:2.0
 # FROM ghcr.io/graalvm/native-image-community:21
-FROM redhat/ubi9-micro
+# FROM redhat/ubi9-micro
+# FROM fedora:39
+FROM scratch
 LABEL maintainer="Julio Faerman <julio@caravana.cloud>"
 
 ARG CP_FROM="/home/container-user/quarkus-app/target/*-runner"
