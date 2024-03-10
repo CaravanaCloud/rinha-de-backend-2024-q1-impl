@@ -101,11 +101,9 @@ BEGIN
                                 ELSE -1
                               END
                 ),
-                'ultimas_transacoes', extrato
+                'ultimas_transacoes', (SELECT extrato FROM clientes WHERE id = p_cliente_id)
             )
-        )::faermanj_result
-        FROM clientes
-        WHERE id = p_cliente_id
+        )::faermanj_result;
 END;
 $$ LANGUAGE plpgsql;
 
