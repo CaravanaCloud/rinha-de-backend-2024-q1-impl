@@ -1,5 +1,5 @@
 # new mem limits
-# docker compose down; docker compose up;
+# git pull; docker compose down; docker compose up;
 version: "3.9"
 
 services:
