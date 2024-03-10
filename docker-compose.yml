@@ -23,7 +23,7 @@ services:
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://127.0.0.1:5400/rinha
       - QUARKUS_DATASOURCE_REACTIVE_CACHE_PREPARED_STATEMENTS=true
-      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=5
+      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=8
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
       - QUARKUS_MICROMETER_ENABLED=false
@@ -45,7 +45,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "200MB"
 
   api02:
@@ -67,7 +67,7 @@ services:
       - QUARKUS_HTTP_IDLE_TIMEOUT=45
       - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://127.0.0.1:5400/rinha
       - QUARKUS_DATASOURCE_REACTIVE_CACHE_PREPARED_STATEMENTS=true
-      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=5
+      - QUARKUS_DATASOURCE_REACTIVE_MAX_SIZE=8
       - QUARKUS_DATASOURCE_USERNAME=rinha
       - QUARKUS_DATASOURCE_PASSWORD=123
       - QUARKUS_MICROMETER_ENABLED=false
@@ -88,7 +88,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.20"
           memory: "200MB"
  
 
@@ -132,7 +132,7 @@ services:
   #      condition: service_healthy
     command: |
       /bin/bash -c "echo 'warmuping'; sleep 3; \
-              for i in \$(seq 1 60); \
+              for i in \$(seq 1 150); \
               do \
                 echo -n \. \$i; \
                 curl -s http://127.0.0.1:9999/clientes/333/extrato > /dev/null  & \
@@ -143,7 +143,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.10"
+          cpus: "0.05"
           memory: "25MB"
 
   
@@ -167,7 +167,7 @@ services:
     deploy:
       resources: 
         limits:
-          cpus: "0.70"
+          cpus: "0.85"
           memory: "100MB"
     healthcheck:
       test: ["CMD", "pg_isready", "--username", "rinha", "--port", "5400"]
