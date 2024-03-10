@@ -12,7 +12,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.8.1</quarkus.platform.version>
+    <quarkus.platform.version>3.8.2</quarkus.platform.version>
     <quarkus.package.type>uber-jar</quarkus.package.type>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
@@ -155,7 +155,7 @@
         </property>
       </activation>
       <properties>
-        <quarkus.native.additional-build-args>-H:+StaticExecutableWithDynamicLibC,--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=99,-H:+UseCompressedReferences,--install-exit-handlers</quarkus.native.additional-build-args>
+        <quarkus.native.additional-build-args>-H:+StaticExecutableWithDynamicLibC,--pgo=/home/container-user/quarkus-app/profile.iprof,--gc=G1,-R:MaxRAMPercentage=99,-H:+UseCompressedReferences,-XX:MaxGCPauseMillis=21,--install-exit-handlers</quarkus.native.additional-build-args>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
       </properties>
