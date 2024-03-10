@@ -86,8 +86,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION proc_extrato(p_cliente_id int)
 RETURNS faermanj_result AS $$
 BEGIN
-    RETURN (
-        SELECT ROW(
+    RETURN ROW(
             200,
             json_build_object(
                 'saldo', json_build_object(
@@ -107,7 +106,6 @@ BEGIN
         )::faermanj_result
         FROM clientes
         WHERE id = p_cliente_id
-    );
 END;
 $$ LANGUAGE plpgsql;
 
