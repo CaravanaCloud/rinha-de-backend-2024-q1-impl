@@ -5,7 +5,7 @@ echo "## Checking registry authentication"
 docker login
 mvn clean
 
-TAG="0.0.333-g121"
+TAG="0.0.333-glibc"
 
 echo "## Building $TAG"
 docker build \

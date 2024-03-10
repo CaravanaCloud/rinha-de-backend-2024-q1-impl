@@ -6,14 +6,14 @@
 ###
 
 ### BUILD STAGE ###
-# FROM fedora:39 as build
-FROM ghcr.io/graalvm/native-image-community:21 as build
+FROM fedora:39 as build
+# FROM ghcr.io/graalvm/native-image-community:21 as build
 # Root level
 # USER root
 # ENV PATH="/usr/bin:${PATH}"
-RUN bash -c "microdnf install -y zip unzip findutils"
+# RUN bash -c "microdnf install -y zip unzip findutils"
 # RUN bash -c "dnf upgrade"
-
+RUN bash -c "dnf groupinstall -y 'Development Tools'"
 
 # Docker
 # RUN bash -c "dnf -y install dnf-plugins-core"
